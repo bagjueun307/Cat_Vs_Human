@@ -2,105 +2,134 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>고양이 vs 사람 대결</title>
+    <title>CAT vs HUMAN: INTERACTIVE SYSTEM</title>
+    <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
-        body { background: #1a1a1a; color: white; font-family: 'Malgun Gothic', sans-serif; text-align: center; margin: 0; overflow: hidden; }
-        #timer-container { font-size: 2rem; padding: 10px; background: #333; }
-        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; height: 85vh; gap: 15px; padding: 15px; }
-        .monitor { border: 8px solid #444; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        :root { --bg: #ffeadb; --point: #ff8c42; --human: #4a90e2; --dark: #5d4037; --success: #27ae60; --fail: #e74c3c; }
+        body { background: var(--bg); color: var(--dark); font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        #header { background: var(--point); width: 100%; padding: 10px 0; color: white; text-align: center; box-shadow: 0 4px 0 #d35400; z-index: 10; }
+        #timer-wrapper { width: 85%; height: 15px; background: #eee; border: 3px solid var(--dark); margin: 10px 0; }
+        #timer-fill { width: 100%; height: 100%; background: var(--fail); transition: width 0.1s linear; }
         
-        /* 팀별 테마 */
-        .human-team { background: #1e3a8a; border-color: #3b82f6; } /* 사람 팀 (인간 지식 필요) */
-        .cat-team { background: #3f3f3f; border-color: #fbbf24; }   /* 고양이 팀 (고양이 역할 수행) */
+        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 98vw; height: 80vh; gap: 10px; padding: 5px; }
+        .monitor { background: #fff5eb; border: 4px solid var(--dark); display: flex; flex-direction: column; justify-content: space-between; align-items: center; position: relative; padding: 10px; box-shadow: 4px 4px 0px rgba(0,0,0,0.1); }
+        .monitor.human-zone { border-color: var(--human); }
+        .monitor.cat-zone { border-color: var(--point); }
+
+        .tag { position: absolute; top: -10px; left: 10px; background: var(--dark); color: white; padding: 2px 6px; font-size: 0.7rem; }
+        .content-area { width: 100%; height: 50%; background: white; border: 2px solid var(--dark); display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        img, video { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        /* 숫자 버튼 스타일 */
+        .button-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 90%; margin-top: 5px; }
+        .num-btn { background: white; border: 2px solid var(--dark); padding: 5px; cursor: pointer; font-family: 'DungGeunMo'; font-size: 0.9rem; transition: 0.1s; border-bottom: 4px solid var(--dark); }
+        .num-btn:active { transform: translateY(2px); border-bottom: 2px solid var(--dark); }
+        .num-btn.selected { background: var(--point); color: white; }
+
+        .audio-btn { background: #5d4037; color: white; border: none; padding: 5px 10px; cursor: pointer; font-family: 'DungGeunMo'; margin: 5px 0; font-size: 0.8rem; }
         
-        .question-text { font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; word-break: keep-all; }
-        input { font-size: 1.2rem; padding: 10px; width: 70%; border-radius: 10px; border: none; text-align: center; }
-        .feedback { height: 30px; margin-top: 15px; font-weight: bold; font-size: 1.1rem; }
-        .highlight { color: #ffeb3b; }
+        .feedback { font-weight: bold; height: 1.2rem; font-size: 0.85rem; margin-top: 2px; }
+        .explosion { position: absolute; font-size: 4rem; z-index: 100; display: none; pointer-events: none; animation: explode 0.5s ease-out forwards; }
+        @keyframes explode { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="timer-container">위치 전환까지: <span id="seconds" style="color:#ff4757">10</span>초</div>
-    <div id="game-board">
-        <div id="m1" class="monitor"></div>
-        <div id="m2" class="monitor"></div>
-        <div id="m3" class="monitor"></div>
-        <div id="m4" class="monitor"></div>
-    </div>
+<div id="header"><h1>[ CAT vs HUMAN ] 클릭형 보안 시스템</h1></div>
+<div id="timer-wrapper"><div id="timer-fill"></div></div>
+<div id="game-board"><div id="m1" class="monitor"></div><div id="m2" class="monitor"></div><div id="m3" class="monitor"></div><div id="m4" class="monitor"></div></div>
 
-    <script>
-        // 파일 내용을 바탕으로 구성한 문제 세트 [cite: 1, 4, 6, 7, 10, 11]
-        const humanQuestions = [
-            { q: "다음 중 페르시안 종의 고양이를 고르세요.", a: "정답" }, // [cite: 1]
-            { q: "아기 샴 고양이인 것을 고르세요. (억까 주의)", a: "정답" }, // [cite: 4]
-            { q: "고양이가 들어간 칸을 모두 고르세요.", a: "정답" }, // [cite: 3]
-            { q: "숨은 고양이가 있는 칸을 모두 누르시오.", a: "정답" }, // [cite: 4]
-            { q: "이 고양이가 있던 총 위치는 어디인가요?", a: "정답" } // [cite: 4]
-        ];
+<script>
+    const raw = (url) => url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
 
-        const catQuestions = [
-            { q: "방금 말한 단어는 무엇인가요? (냐 양 념 뤠...)", a: "냐갈념뤠오발내퀴후이라걀" }, // [cite: 6]
-            { q: "인간의 말입니다. '한국말을 알아요?'를 맞추세요.", a: "한국말을 알아요?" }, // [cite: 7]
-            { q: "고양이가 사오라고 한 것은 무엇인가요?", a: "오징어" }, // [cite: 10]
-            { q: "고양이가 사오지 말라고 한 것은 무엇인가요?", a: "생강" }, // [cite: 11]
-            { q: "현재 시간이 몇 시인지 맞추세요.", a: "정답" } // [cite: 1]
-        ];
+    const problemDB = [
+        { type: 'human', q: "[보기] 고양이가 몇 번 때리나요?", a: "정답", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), video: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88%20%EB%95%8C%EB%A6%AC%EB%8A%94%20%EA%B3%A0%EC%96%91%EC%9D%B4.mp4"), multi: false },
+        { type: 'human', q: "페르시안 고양이를 고르세요.", a: "1", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/1.JPG"), multi: false },
+        { type: 'human', q: "츄르(황태)를 고르세요.", a: "2", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/2.JPG"), multi: false },
+        { type: 'cat', q: "몇 시 인지 맞추세요. (내 고양)", a: "9", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/3.JPG"), multi: false },
+        { type: 'human', q: "고양이가 아닌 것(번호)을 누르세요.", a: "정답", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG"), multi: false },
+        { type: 'human', q: "틀린 곳은 총 몇 군데?", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/5.JPG"), multi: false },
+        { type: 'human', q: "고양이 칸 번호를 모두 누르세요.", a: "135", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/6.JPG"), multi: true },
+        { type: 'human', q: "숨은 고양이 칸을 모두 누르세요.", a: "24", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/7.JPG"), multi: true },
+        { type: 'human', q: "아기 샴 고양이를 고르세요.", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/8.JPG"), multi: false },
+        { type: 'cat', q: "고양이가 있던 위치 개수는?", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/9.JPG"), multi: false },
+        { type: 'cat', q: "듣기 1: 소리를 듣고 정답 이미지를 확인!", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%EB%82%98%EA%B1%B0%EB%9E%98%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), multi: false },
+        { type: 'cat', q: "듣기 2: 거꾸로 말한 문장은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%ED%95%9C%EA%B5%AD%EB%A7%90%EC%9D%84%20%EC%95%8C%EC%95%84%EC%9A%94%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%202%EB%B2%88.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C2.JPG"), multi: false },
+        { type: 'cat', q: "듣기 3: 사오라고 한 음식은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%203%EB%B2%88%20%EC%98%A4%EC%A7%95%EC%96%B4.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C3.JPG"), multi: false },
+        { type: 'cat', q: "듣기 4: 사오지 말라는 것은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%204%EB%B2%88%20%EC%83%9D%EA%B0%81%20%EC%82%AC%EC%98%A4%EC%A7%80%20%EB%A7%88%EC%84%B8%EC%9A%94.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C4.JPG"), multi: false }
+    ];
 
-        const monitors = [document.getElementById('m1'), document.getElementById('m2'), document.getElementById('m3'), document.getElementById('m4')];
-        let timeLeft = 10;
+    let timeLeft = 100;
+    let selectedAnswers = ["", "", "", ""];
 
-        function shuffleAndAssign() {
-            // 0,1,2,3 숫자를 섞음
-            const roles = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+    function render() {
+        const shuffled = [...problemDB].sort(() => Math.random() - 0.5);
+        selectedAnswers = ["", "", "", ""];
+        
+        document.querySelectorAll('.monitor').forEach((m, i) => {
+            const p = shuffled[i];
+            const isH = p.type === 'human';
+            m.className = `monitor ${isH ? 'human-zone' : 'cat-zone'}`;
             
-            monitors.forEach((m, i) => {
-                m.innerHTML = '';
-                // 섞인 인덱스 중 0,1은 사람 문제, 2,3은 고양이 문제 배정
-                const isHumanSide = roles[i] < 2;
-                const teamClass = isHumanSide ? 'human-team' : 'cat-team';
-                const teamName = isHumanSide ? '👤 인간 전용 (난이도: 상)' : '🐱 고양이 전용 (난이도: 상)';
-                const qList = isHumanSide ? humanQuestions : catQuestions;
-                const qData = qList[Math.floor(Math.random() * qList.length)];
+            let visual = p.video ? `<video src="${p.video}" autoplay loop muted playsinline></video>` : `<img src="${p.img}">`;
+            
+            m.innerHTML = `
+                <div class="explosion">💥</div>
+                <div class="tag">${isH ? 'HUMAN ONLY' : 'CAT ONLY'}</div>
+                <div style="font-size:0.8rem; text-align:center;">${p.q}</div>
+                <div class="content-area">${visual}</div>
+                ${p.audio ? `<button class="audio-btn" onclick="new Audio('${p.audio}').play()">🎵 소리 듣기</button>` : ''}
+                <div class="button-pad" id="pad-${i}">
+                    ${[1,2,3,4,5,6,7,8,9].map(num => `<button class="num-btn" onclick="handleClick(${i}, '${num}', '${p.a}', ${p.multi}, this)">${num}</button>`).join('')}
+                    <button class="num-btn" style="grid-column: span 1; background:#eee;" onclick="handleClick(${i}, '정답', '${p.a}', false, this)">OK</button>
+                </div>
+                <div class="feedback" id="fb-${i}"></div>
+            `;
+        });
+    }
 
-                m.className = `monitor ${teamClass}`;
-                m.innerHTML = `
-                    <div style="font-size:0.9rem; opacity:0.8; margin-bottom:10px;">${teamName}</div>
-                    <div class="question-text">${qData.q}</div>
-                    <input type="text" placeholder="정답을 입력하고 Enter" onkeydown="checkAnswer(event, this, '${qData.a}')">
-                    <div class="feedback"></div>
-                `;
-            });
-        }
-
-        function checkAnswer(event, input, correct) {
-            if (event.key === 'Enter') {
-                const feedback = input.nextElementSibling;
-                if (input.value.trim() === correct || correct === "정답") { // "정답"은 예시용 허용
-                    feedback.innerText = "⭕ 정답! 다음 문제 대기 중...";
-                    feedback.style.color = "#2ecc71";
-                    input.style.border = "3px solid #2ecc71";
-                    // 정답 시 1초 후 해당 칸만 문제 교체 가능
-                } else {
-                    feedback.innerText = "❌ 틀렸습니다! 다시 생각해보세요.";
-                    feedback.style.color = "#ff4757";
-                    input.style.border = "3px solid #ff4757";
+    function handleClick(monitorIdx, val, correct, isMulti, btn) {
+        const fb = document.getElementById(`fb-${monitorIdx}`);
+        
+        if (isMulti) {
+            // 다중 선택 (예: 135)
+            if (val === '정답') {
+                checkFinal(monitorIdx, selectedAnswers[monitorIdx], correct);
+            } else {
+                if (!selectedAnswers[monitorIdx].includes(val)) {
+                    selectedAnswers[monitorIdx] += val;
+                    btn.classList.add('selected');
                 }
             }
+        } else {
+            // 단일 선택
+            checkFinal(monitorIdx, val, correct);
         }
+    }
 
-        // 10초 타이머 및 랜덤 교체 로직
-        setInterval(() => {
-            timeLeft--;
-            document.getElementById('seconds').innerText = timeLeft;
-            if (timeLeft <= 0) {
-                timeLeft = 10;
-                shuffleAndAssign();
-            }
-        }, 1000);
+    function checkFinal(idx, val, correct) {
+        const fb = document.getElementById(`fb-${idx}`);
+        const sortedVal = val.split('').sort().join('');
+        const sortedCorrect = correct.split('').sort().join('');
 
-        // 게임 시작
-        shuffleAndAssign();
-    </script>
+        if (val === correct || sortedVal === sortedCorrect || correct === "정답") {
+            fb.innerText = "ACCESS GRANTED"; fb.style.color = "var(--success)";
+        } else {
+            fb.innerText = "ACCESS DENIED"; fb.style.color = "var(--fail)";
+        }
+    }
+
+    function tick() {
+        timeLeft -= 0.15;
+        document.getElementById('timer-fill').style.width = timeLeft + "%";
+        if (timeLeft <= 0) {
+            document.querySelectorAll('.explosion').forEach(ex => ex.style.display = 'block');
+            setTimeout(() => { timeLeft = 100; render(); }, 500);
+        }
+    }
+
+    setInterval(tick, 20);
+    render();
+</script>
 </body>
 </html>
