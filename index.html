@@ -2,53 +2,63 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>초등학교 컴퓨터실: 5분 동시 대결 V24</title>
+    <title>초등학교 컴퓨터실 멀티플레이 V25</title>
     <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
-        body { background: #000; color: #00ff00; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; }
+        body { background: #000; color: #00ff00; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        
+        /* 로비 화면 */
         #lobby { position: fixed; inset: 0; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
-        .monitor-btn { width: 180px; height: 100px; font-family: 'DungGeunMo'; font-size: 1.2rem; cursor: pointer; margin: 10px; background: #333; color: white; border: 4px outset #888; }
+        .lobby-title { font-size: 2.5rem; color: #f1c40f; margin-bottom: 30px; }
+        .monitor-btn { width: 150px; height: 80px; font-family: 'DungGeunMo'; font-size: 1.1rem; cursor: pointer; margin: 10px; background: #333; color: white; border: 4px outset #888; }
+        .monitor-btn:hover { background: #444; border-color: #0ff; }
         .start-trigger { margin-top: 30px; padding: 15px 40px; font-size: 1.5rem; background: #f1c40f; color: #000; cursor: pointer; border: none; font-family: 'DungGeunMo'; }
 
-        #game-container { display: none; flex-direction: column; align-items: center; width: 100vw; height: 100vh; }
-        #header { width: 100%; padding: 10px; background: #222; border-bottom: 4px inset #555; display: flex; flex-direction: column; align-items: center; }
-        #score-board { display: flex; gap: 30px; font-size: 1.8rem; margin-bottom: 5px; }
-        .score.red { color: #e74c3c; }
-        .score.blue { color: #3498db; }
-        .time-bar-bg { width: 80%; height: 15px; background: #111; border: 2px inset #555; }
+        /* 게임 메인 레이아웃 */
+        #game-container { display: none; flex-direction: column; align-items: center; width: 100vw; height: 100vh; padding: 20px; box-sizing: border-box; }
+        #header { width: 100%; max-width: 1000px; display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        
+        /* 팀 점수판 */
+        #score-board { display: flex; gap: 40px; font-size: 2rem; margin-bottom: 10px; }
+        .score.red { color: #e74c3c; text-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
+        .score.blue { color: #3498db; text-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+
+        .time-bar-bg { width: 100%; height: 20px; background: #111; border: 2px inset #555; position: relative; }
         #time-bar { width: 100%; height: 100%; background: #00ff00; transition: width 0.1s linear; }
 
-        #game-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100vw; height: 75vh; gap: 10px; padding: 10px; box-sizing: border-box; }
-        .monitor-container { display: flex; flex-direction: column; align-items: center; transition: all 0.5s ease-in-out; }
-        .teacher-box { width: 70px; height: 50px; font-size: 2.5rem; display: flex; justify-content: center; align-items: center; background: #333; border: 4px solid #555; border-radius: 8px 8px 0 0; margin-bottom: -4px; }
+        /* 선생님과 단일 모니터 화면 */
+        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+        .teacher-box { width: 120px; height: 90px; font-size: 4rem; display: flex; justify-content: center; align-items: center; background: #333; border: 5px solid #555; border-radius: 15px 15px 0 0; margin-bottom: -5px; z-index: 10; }
         .teacher-box.watching { background: #ff0000; animation: shake 0.1s infinite; }
-        .monitor-frame { width: 100%; height: 100%; border: 8px outset #aaa; background: #000; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; }
-        .red-team { border-color: #e74c3c !important; }
-        .blue-team { border-color: #3498db !important; }
-        .my-border { border-style: double !important; border-width: 10px !important; box-shadow: 0 0 20px #0f0; }
 
-        .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; flex: 1; }
-        .card { height: 20px; background: #222; color: #444; font-size: 0.5rem; display: flex; justify-content: center; align-items: center; border-radius: 2px; }
-        .card.red { background: #e74c3c; color: white; }
-        .card.blue { background: #3498db; color: white; }
-        .input-area { margin-top: 10px; width: 100%; }
-        input { width: 100%; padding: 8px; font-family: 'DungGeunMo'; font-size: 1rem; background: #000; color: #fff; border: 2px solid #555; outline: none; text-align: center; }
-        input.caught { border-color: red; background: #400; }
+        .monitor-frame { width: 100%; max-width: 900px; border: 12px outset #aaa; background: #000; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .monitor-frame.red-team { border-color: #e74c3c; }
+        .monitor-frame.blue-team { border-color: #3498db; }
+
+        .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; flex: 1; }
+        .card { height: 35px; background: #222; color: #444; font-size: 0.8rem; display: flex; justify-content: center; align-items: center; border-radius: 4px; text-align: center; border: 1px solid #333; }
+        .card.red { background: #e74c3c; color: white; box-shadow: inset -3px -3px 0 #962d22; border: none; }
+        .card.blue { background: #3498db; color: white; box-shadow: inset -3px -3px 0 #2471a3; border: none; }
+
+        .input-area { margin-top: 20px; width: 100%; }
+        #player-input { width: 100%; padding: 15px; font-family: 'DungGeunMo'; font-size: 1.8rem; background: #000; color: #fff; border: 4px solid #555; outline: none; text-align: center; }
+        #player-input.caught { border-color: red; background: #400; }
+
         @keyframes shake { 0% { transform: translateY(-2px); } 100% { transform: translateY(2px); } }
     </style>
 </head>
 <body>
 
 <div id="lobby">
-    <h1 class="lobby-title">진짜 컴퓨터실 타자 대결</h1>
-    <div id="btn-group">
-        <button class="monitor-btn" onclick="selectPos(1)">모니터 1 선택</button>
-        <button class="monitor-btn" onclick="selectPos(2)">모니터 2 선택</button>
-        <button class="monitor-btn" onclick="selectPos(3)">모니터 3 선택</button>
-        <button class="monitor-btn" onclick="selectPos(4)">모니터 4 선택</button>
+    <h1 class="lobby-title">초등학교 컴퓨터실 대결</h1>
+    <div>
+        <button class="monitor-btn" onclick="assignPos(1)">모니터 1</button>
+        <button class="monitor-btn" onclick="assignPos(2)">모니터 2</button>
+        <button class="monitor-btn" onclick="assignPos(3)">모니터 3</button>
+        <button class="monitor-btn" onclick="assignPos(4)">모니터 4</button>
     </div>
-    <button id="btn-start" class="start-trigger" onclick="triggerStart()" style="display:none;">수업 시작! (모두 동시 시작)</button>
-    <p id="wait-msg" style="color: #666; margin-top: 20px;">자리를 고르고 친구들을 기다리세요.</p>
+    <button id="btn-start" class="start-trigger" onclick="broadcastStart()" style="display:none;">수업 시작! (전체 동기화)</button>
+    <p id="status-msg" style="color: #666; margin-top: 20px;">자신의 자리를 선택하고 대기하세요.</p>
 </div>
 
 <div id="game-container">
@@ -58,141 +68,168 @@
             <div style="color: #fff;">VS</div>
             <div class="score blue">BLUE: <span id="score-blue">0</span></div>
         </div>
-        <div id="timer-text" style="font-size:1.2rem;">남은 시간: 300.0s</div>
+        <div id="timer-text" style="font-size:1.5rem;">남은 수업 시간: 300.0s</div>
         <div class="time-bar-bg"><div id="time-bar"></div></div>
     </div>
-    <div id="game-grid">
-        <div id="cont-1" class="monitor-container"><div class="teacher-box t-all">👨‍🏫</div><div id="mon-1" class="monitor-frame red-team"><div class="board" id="board-1"></div><div class="input-area"><input type="text" id="in-1" placeholder="RED"></div></div></div>
-        <div id="cont-2" class="monitor-container"><div class="teacher-box t-all">👨‍🏫</div><div id="mon-2" class="monitor-frame blue-team"><div class="board" id="board-2"></div><div class="input-area"><input type="text" id="in-2" placeholder="BLUE"></div></div></div>
-        <div id="cont-3" class="monitor-container"><div class="teacher-box t-all">👨‍🏫</div><div id="mon-3" class="monitor-frame red-team"><div class="board" id="board-3"></div><div class="input-area"><input type="text" id="in-3" placeholder="RED"></div></div></div>
-        <div id="cont-4" class="monitor-container"><div class="teacher-box t-all">👨‍🏫</div><div id="mon-4" class="monitor-frame blue-team"><div class="board" id="board-4"></div><div class="input-area"><input type="text" id="in-4" placeholder="BLUE"></div></div></div>
+
+    <div class="stage">
+        <div id="teacher" class="teacher-box">👨‍🏫</div>
+        <div id="my-monitor" class="monitor-frame">
+            <div id="main-board" class="board"></div>
+            <div class="input-area">
+                <input type="text" id="player-input" placeholder="여기에 단어를 치세요!">
+            </div>
+        </div>
+        <div id="pos-info" style="margin-top: 20px; color: #f1c40f; font-size: 1.2rem;"></div>
     </div>
 </div>
 
 <script>
     const schoolWords = ["떡볶이", "급식", "운동장", "받아쓰기", "방학", "우유급식", "알림장", "짝꿍", "준비물", "실내화", "색종이", "딱지", "슬러시", "피카츄", "학원", "숙제", "체육", "소풍", "쉬는시간", "지우개", "필통", "실로폰", "리코더", "반장", "일기", "독서", "피구", "태권도", "문방구", "뽑기", "분식집", "교실", "모둠활동", "교장선생님", "운동회", "매점", "칠판", "분필", "실내화가방", "정문"];
-    let myPos = 0, gameActive = false, isTeacherWatching = false;
 
-    // 초기화
-    localStorage.setItem('game_state', JSON.stringify({cards: {}, redScore: 0, blueScore: 0}));
+    let myPos = 0;
+    let myTeam = '';
+    let gameActive = false;
+    let isTeacherWatching = false;
 
-    function selectPos(num) {
-        myPos = num;
-        document.getElementById('wait-msg').innerText = `${num}번 자리 선택 완료!`;
-        document.getElementById('btn-start').style.display = 'block';
-        for(let i=1; i<=4; i++) document.getElementById(`mon-${i}`).classList.remove('my-border');
-        document.getElementById(`mon-${num}`).classList.add('my-border');
+    // 초기화: 다른 창들과 데이터를 맞추기 위해 초기 상태 설정
+    if(!localStorage.getItem('game_state')) {
+        localStorage.setItem('game_state', JSON.stringify({cards: {}, redScore: 0, blueScore: 0}));
     }
 
-    function triggerStart() {
-        const startKey = 'START_' + Date.now();
-        localStorage.setItem('game_command', startKey);
-        runGame(); // 본인 창 즉시 시작
+    function assignPos(num) {
+        myPos = num;
+        myTeam = (num === 1 || num === 3) ? 'red' : 'blue';
+        document.getElementById('status-msg').innerText = `${num}번 자리 선택됨! (팀: ${myTeam.toUpperCase()})`;
+        document.getElementById('btn-start').style.display = 'inline-block';
+        document.getElementById('pos-info').innerText = `내 위치: ${num}번 모니터 / 팀: ${myTeam.toUpperCase()}`;
+        
+        const frame = document.getElementById('my-monitor');
+        frame.classList.add(myTeam === 'red' ? 'red-team' : 'blue-team');
+    }
+
+    function broadcastStart() {
+        localStorage.setItem('game_command', 'START_' + Date.now());
+        runGame();
     }
 
     window.addEventListener('storage', (e) => {
+        // 1. 시작 신호 동기화
         if (e.key === 'game_command' && e.newValue.startsWith('START')) {
-            if (!gameActive) runGame(); // 다른 창들 시작
+            if (!gameActive) runGame();
         }
-        if (e.key === 'game_state') syncUI();
+        // 2. 카드/점수 상태 실시간 동기화
+        if (e.key === 'game_state') {
+            syncUI();
+        }
     });
 
     function runGame() {
         if (gameActive) return;
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('game-container').style.display = 'flex';
-        initBoards();
+        
+        buildBoard();
         gameActive = true;
 
         let timeLeft = 3000;
         const timer = setInterval(() => {
             timeLeft--;
             document.getElementById('time-bar').style.width = (timeLeft / 3000) * 100 + "%";
-            document.getElementById('timer-text').innerText = `남은 시간: ${(timeLeft / 10).toFixed(1)}s`;
+            document.getElementById('timer-text').innerText = `남은 수업 시간: ${(timeLeft / 10).toFixed(1)}s`;
 
+            // 모든 창의 선생님이 똑같이 움직임 (시간 기반)
             const cycle = timeLeft % 200;
-            const boxes = document.querySelectorAll('.t-all');
             if (cycle <= 20) {
                 isTeacherWatching = true;
-                boxes.forEach(b => { b.classList.add('watching'); b.innerText = "👀"; });
+                document.getElementById('teacher').classList.add('watching');
+                document.getElementById('teacher').innerText = "👀";
             } else {
                 isTeacherWatching = false;
-                boxes.forEach(b => { b.classList.remove('watching'); b.innerText = "👨‍🏫"; });
+                document.getElementById('teacher').classList.remove('watching');
+                document.getElementById('teacher').innerText = "👨‍🏫";
             }
 
-            if (timeLeft % 100 === 0 && timeLeft > 0) shuffleLayout();
-            if (timeLeft <= 0) { clearInterval(timer); finishGame(); }
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                endGame();
+            }
         }, 100);
-        setupInputs();
+
+        handleInput();
     }
 
-    function initBoards() {
-        for(let i=1; i<=4; i++) {
-            const b = document.getElementById(`board-${i}`); b.innerHTML = '';
-            schoolWords.forEach(w => {
-                const c = document.createElement('div');
-                c.className = 'card'; c.innerText = w; c.id = `mon-${i}-card-${w}`;
-                b.appendChild(c);
-            });
-        }
+    function buildBoard() {
+        const board = document.getElementById('main-board');
+        board.innerHTML = '';
+        schoolWords.forEach(w => {
+            const c = document.createElement('div');
+            c.className = 'card';
+            c.innerText = w;
+            c.id = `card-${w}`;
+            board.appendChild(c);
+        });
+        syncUI(); // 초기 상태 반영
     }
 
-    function shuffleLayout() {
-        if (!gameActive || isTeacherWatching) return;
-        const grid = document.getElementById('game-grid');
-        const containers = Array.from(document.querySelectorAll('.monitor-container'));
-        containers.sort(() => Math.random() - 0.5);
-        containers.forEach(c => grid.appendChild(c));
-    }
-
-    function setupInputs() {
-        for(let i=1; i<=4; i++) {
-            const input = document.getElementById(`in-${i}`);
-            const team = (i === 1 || i === 3) ? 'red' : 'blue';
-            if (i !== myPos) { input.disabled = true; input.placeholder = "상대방 화면"; }
-            else { input.focus(); }
-
-            input.addEventListener('keydown', (e) => {
-                if (isTeacherWatching) {
-                    input.classList.add('caught'); setTimeout(() => input.classList.remove('caught'), 500);
-                    let state = JSON.parse(localStorage.getItem('game_state'));
-                    let myCards = schoolWords.filter(w => state.cards[w] === team);
-                    if (myCards.length > 0) { delete state.cards[myCards[Math.floor(Math.random()*myCards.length)]]; updateState(state); }
-                    input.value = ''; e.preventDefault(); return;
+    function handleInput() {
+        const input = document.getElementById('player-input');
+        input.focus();
+        input.addEventListener('keydown', (e) => {
+            if (isTeacherWatching) {
+                input.classList.add('caught');
+                setTimeout(() => input.classList.remove('caught'), 500);
+                
+                // 걸리면 우리 팀 카드 하나가 중립으로 돌아감 (실시간 반영)
+                let state = JSON.parse(localStorage.getItem('game_state'));
+                let myCards = schoolWords.filter(w => state.cards[w] === myTeam);
+                if (myCards.length > 0) {
+                    delete state.cards[myCards[Math.floor(Math.random() * myCards.length)]];
+                    pushUpdate(state);
                 }
-                if (e.key === 'Enter') {
-                    const val = input.value.trim();
-                    let state = JSON.parse(localStorage.getItem('game_state'));
-                    if (schoolWords.includes(val) && !state.cards[val]) { state.cards[val] = team; updateState(state); }
-                    input.value = '';
+                input.value = '';
+                e.preventDefault();
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                const val = input.value.trim();
+                let state = JSON.parse(localStorage.getItem('game_state'));
+                if (schoolWords.includes(val) && !state.cards[val]) {
+                    state.cards[val] = myTeam;
+                    pushUpdate(state);
                 }
-            });
-        }
+                input.value = '';
+            }
+        });
     }
 
-    function updateState(state) {
+    function pushUpdate(state) {
         state.redScore = schoolWords.filter(w => state.cards[w] === 'red').length;
         state.blueScore = schoolWords.filter(w => state.cards[w] === 'blue').length;
         localStorage.setItem('game_state', JSON.stringify(state));
-        syncUI();
+        syncUI(); // 내 화면 즉시 갱신
     }
 
     function syncUI() {
         const state = JSON.parse(localStorage.getItem('game_state'));
         document.getElementById('score-red').innerText = state.redScore;
         document.getElementById('score-blue').innerText = state.blueScore;
-        for(let i=1; i<=4; i++) {
-            schoolWords.forEach(w => {
-                const card = document.getElementById(`mon-${i}-card-${w}`);
-                if(card) card.className = 'card' + (state.cards[w] ? ' ' + state.cards[w] : '');
-            });
-        }
+
+        schoolWords.forEach(w => {
+            const card = document.getElementById(`card-${w}`);
+            if(card) {
+                card.className = 'card' + (state.cards[w] ? ' ' + state.cards[w] : '');
+            }
+        });
     }
 
-    function finishGame() {
+    function endGame() {
         gameActive = false;
         const state = JSON.parse(localStorage.getItem('game_state'));
-        alert(`수업 종료!\nRED: ${state.redScore} : BLUE: ${state.blueScore}`);
+        alert(`수업 종료!\n최종 스코어 - RED팀: ${state.redScore} : BLUE팀: ${state.blueScore}`);
+        localStorage.removeItem('game_state');
+        localStorage.removeItem('game_command');
         location.reload();
     }
 </script>
