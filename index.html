@@ -2,42 +2,66 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>CAT vs HUMAN: INTERACTIVE SYSTEM</title>
+    <title>CAT vs HUMAN: COLOR & GRID SYSTEM</title>
     <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #ffeadb; --point: #ff8c42; --human: #4a90e2; --dark: #5d4037; --success: #27ae60; --fail: #e74c3c; }
-        body { background: var(--bg); color: var(--dark); font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
-        #header { background: var(--point); width: 100%; padding: 10px 0; color: white; text-align: center; box-shadow: 0 4px 0 #d35400; z-index: 10; }
-        #timer-wrapper { width: 85%; height: 15px; background: #eee; border: 3px solid var(--dark); margin: 10px 0; }
+        :root { 
+            --bg: #1a1a1a; 
+            --human-main: #3498db; --human-bg: #ebf5fb;
+            --cat-main: #e67e22; --cat-bg: #fef5e7;
+            --dark: #2c3e50; --fail: #e74c3c; --success: #27ae60;
+        }
+        body { background: var(--bg); color: white; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        
+        #header { background: #333; width: 100%; padding: 10px 0; color: white; text-align: center; border-bottom: 4px solid #000; }
+        #timer-wrapper { width: 90%; height: 12px; background: #444; border: 2px solid #000; margin: 10px 0; }
         #timer-fill { width: 100%; height: 100%; background: var(--fail); transition: width 0.1s linear; }
         
-        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 98vw; height: 80vh; gap: 10px; padding: 5px; }
-        .monitor { background: #fff5eb; border: 4px solid var(--dark); display: flex; flex-direction: column; justify-content: space-between; align-items: center; position: relative; padding: 10px; box-shadow: 4px 4px 0px rgba(0,0,0,0.1); }
-        .monitor.human-zone { border-color: var(--human); }
-        .monitor.cat-zone { border-color: var(--point); }
+        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 98vw; height: 82vh; gap: 12px; padding: 10px; box-sizing: border-box; }
+        
+        /* 모니터 스타일: 컬러 구별 강화 */
+        .monitor { position: relative; border: 8px solid; border-radius: 10px; display: flex; flex-direction: column; padding: 10px; transition: 0.3s; box-sizing: border-box; }
+        .monitor.human-zone { background: var(--human-bg); border-color: var(--human-main); color: var(--dark); }
+        .monitor.cat-zone { background: var(--cat-bg); border-color: var(--cat-main); color: var(--dark); }
 
-        .tag { position: absolute; top: -10px; left: 10px; background: var(--dark); color: white; padding: 2px 6px; font-size: 0.7rem; }
-        .content-area { width: 100%; height: 50%; background: white; border: 2px solid var(--dark); display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        /* 패널티 락다운 */
+        .monitor.locked { filter: grayscale(1) brightness(0.5); pointer-events: none; }
+        .monitor.locked::after { content: "LOCKDOWN\n(10s)"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 2rem; text-align: center; white-space: pre; z-index: 100; text-shadow: 3px 3px #000; }
+
+        .tag { position: absolute; top: -15px; left: 20px; padding: 2px 12px; font-size: 0.9rem; font-weight: bold; color: white; border-radius: 5px; }
+        .human-zone .tag { background: var(--human-main); }
+        .cat-zone .tag { background: var(--cat-main); }
+
+        .content-area { width: 100%; height: 40%; background: white; border: 3px solid #333; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 10px; }
         img, video { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* 숫자 버튼 스타일 */
-        .button-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 90%; margin-top: 5px; }
-        .num-btn { background: white; border: 2px solid var(--dark); padding: 5px; cursor: pointer; font-family: 'DungGeunMo'; font-size: 0.9rem; transition: 0.1s; border-bottom: 4px solid var(--dark); }
-        .num-btn:active { transform: translateY(2px); border-bottom: 2px solid var(--dark); }
-        .num-btn.selected { background: var(--point); color: white; }
-
-        .audio-btn { background: #5d4037; color: white; border: none; padding: 5px 10px; cursor: pointer; font-family: 'DungGeunMo'; margin: 5px 0; font-size: 0.8rem; }
+        /* 4x4 정사각형 키패드 */
+        .button-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; width: 180px; margin: 0 auto; }
+        .num-btn { 
+            aspect-ratio: 1/1; background: white; border: 2px solid #333; 
+            font-family: 'DungGeunMo'; font-size: 1.2rem; cursor: pointer;
+            box-shadow: 0 4px 0 #999;
+        }
+        .num-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #999; }
+        .num-btn.selected { background: #333; color: white; }
         
-        .feedback { font-weight: bold; height: 1.2rem; font-size: 0.85rem; margin-top: 2px; }
-        .explosion { position: absolute; font-size: 4rem; z-index: 100; display: none; pointer-events: none; animation: explode 0.5s ease-out forwards; }
-        @keyframes explode { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+        .control-row { display: flex; gap: 5px; width: 180px; margin: 5px auto; }
+        .ok-btn { flex: 2; height: 35px; background: #333; color: white; border: none; font-family: 'DungGeunMo'; cursor: pointer; }
+        .audio-btn { flex: 1; height: 35px; background: #7f8c8d; color: white; border: none; font-family: 'DungGeunMo'; cursor: pointer; font-size: 0.7rem; }
+
+        .feedback { text-align: center; font-weight: bold; height: 1.5rem; margin-top: 5px; font-size: 1rem; }
     </style>
 </head>
 <body>
 
-<div id="header"><h1>[ CAT vs HUMAN ] 클릭형 보안 시스템</h1></div>
+<div id="header"><h1>[ CAT vs HUMAN ] SECURITY SYSTEM V8</h1></div>
 <div id="timer-wrapper"><div id="timer-fill"></div></div>
-<div id="game-board"><div id="m1" class="monitor"></div><div id="m2" class="monitor"></div><div id="m3" class="monitor"></div><div id="m4" class="monitor"></div></div>
+<div id="game-board">
+    <div id="m0" class="monitor"></div>
+    <div id="m1" class="monitor"></div>
+    <div id="m2" class="monitor"></div>
+    <div id="m3" class="monitor"></div>
+</div>
 
 <script>
     const raw = (url) => url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
@@ -46,90 +70,92 @@
         { type: 'human', q: "[보기] 고양이가 몇 번 때리나요?", a: "정답", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), video: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88%20%EB%95%8C%EB%A6%AC%EB%8A%94%20%EA%B3%A0%EC%96%91%EC%9D%B4.mp4"), multi: false },
         { type: 'human', q: "페르시안 고양이를 고르세요.", a: "1", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/1.JPG"), multi: false },
         { type: 'human', q: "츄르(황태)를 고르세요.", a: "2", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/2.JPG"), multi: false },
-        { type: 'cat', q: "몇 시 인지 맞추세요. (내 고양)", a: "9", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/3.JPG"), multi: false },
-        { type: 'human', q: "고양이가 아닌 것(번호)을 누르세요.", a: "정답", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG"), multi: false },
+        { type: 'cat', q: "몇 시 인지 맞추세요.", a: "9", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/3.JPG"), multi: false },
+        { type: 'human', q: "고양이가 아닌 것을 누르세요.", a: "정답", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG"), multi: false },
         { type: 'human', q: "틀린 곳은 총 몇 군데?", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/5.JPG"), multi: false },
         { type: 'human', q: "고양이 칸 번호를 모두 누르세요.", a: "135", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/6.JPG"), multi: true },
         { type: 'human', q: "숨은 고양이 칸을 모두 누르세요.", a: "24", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/7.JPG"), multi: true },
         { type: 'human', q: "아기 샴 고양이를 고르세요.", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/8.JPG"), multi: false },
         { type: 'cat', q: "고양이가 있던 위치 개수는?", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/9.JPG"), multi: false },
-        { type: 'cat', q: "듣기 1: 소리를 듣고 정답 이미지를 확인!", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%EB%82%98%EA%B1%B0%EB%9E%98%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), multi: false },
+        { type: 'cat', q: "듣기 1: 소리를 듣고 정답 입력!", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%EB%82%98%EA%B1%B0%EB%9E%98%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), multi: false },
         { type: 'cat', q: "듣기 2: 거꾸로 말한 문장은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%ED%95%9C%EA%B5%AD%EB%A7%90%EC%9D%84%20%EC%95%8C%EC%95%84%EC%9A%94%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%202%EB%B2%88.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C2.JPG"), multi: false },
         { type: 'cat', q: "듣기 3: 사오라고 한 음식은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%203%EB%B2%88%20%EC%98%A4%EC%A7%95%EC%96%B4.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C3.JPG"), multi: false },
-        { type: 'cat', q: "듣기 4: 사오지 말라는 것은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%204%EB%B2%88%20%EC%83%9D%EA%B0%81%20%EC%82%AC%EC%98%A4%EC%A7%80%20%EB%A7%88%EC%84%B8%EC%9A%94.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C4.JPG"), multi: false }
+        { type: 'cat', q: "듣기 4: 사오지 말라는 음식은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%204%EB%B2%88%20%EC%83%9D%EA%B0%81%20%EC%82%AC%EC%98%A4%EC%A7%80%20%EB%A7%88%EC%84%B8%EC%9A%94.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C4.JPG"), multi: false }
     ];
 
     let timeLeft = 100;
     let selectedAnswers = ["", "", "", ""];
 
-    function render() {
-        const shuffled = [...problemDB].sort(() => Math.random() - 0.5);
-        selectedAnswers = ["", "", "", ""];
+    function setProblem(idx) {
+        const m = document.getElementById(`m${idx}`);
+        const p = problemDB[Math.floor(Math.random() * problemDB.length)];
+        const isH = p.type === 'human';
+        selectedAnswers[idx] = "";
         
-        document.querySelectorAll('.monitor').forEach((m, i) => {
-            const p = shuffled[i];
-            const isH = p.type === 'human';
-            m.className = `monitor ${isH ? 'human-zone' : 'cat-zone'}`;
-            
-            let visual = p.video ? `<video src="${p.video}" autoplay loop muted playsinline></video>` : `<img src="${p.img}">`;
-            
-            m.innerHTML = `
-                <div class="explosion">💥</div>
-                <div class="tag">${isH ? 'HUMAN ONLY' : 'CAT ONLY'}</div>
-                <div style="font-size:0.8rem; text-align:center;">${p.q}</div>
-                <div class="content-area">${visual}</div>
-                ${p.audio ? `<button class="audio-btn" onclick="new Audio('${p.audio}').play()">🎵 소리 듣기</button>` : ''}
-                <div class="button-pad" id="pad-${i}">
-                    ${[1,2,3,4,5,6,7,8,9].map(num => `<button class="num-btn" onclick="handleClick(${i}, '${num}', '${p.a}', ${p.multi}, this)">${num}</button>`).join('')}
-                    <button class="num-btn" style="grid-column: span 1; background:#eee;" onclick="handleClick(${i}, '정답', '${p.a}', false, this)">OK</button>
-                </div>
-                <div class="feedback" id="fb-${i}"></div>
-            `;
-        });
+        m.className = `monitor ${isH ? 'human-zone' : 'cat-zone'}`;
+        let visual = p.video ? `<video src="${p.video}" autoplay loop muted playsinline></video>` : `<img src="${p.img}">`;
+        
+        m.innerHTML = `
+            <div class="tag">${isH ? 'HUMAN ONLY' : 'CAT ONLY'}</div>
+            <div style="font-size:0.8rem; text-align:center; height:1.8rem; font-weight:bold;">${p.q}</div>
+            <div class="content-area">${visual}</div>
+            <div class="button-pad">
+                ${[1,2,3,4,5,6,7,8,9,0].map(n => `<button class="num-btn" onclick="btnPush(${idx}, '${n}', '${p.a}', ${p.multi}, this)">${n}</button>`).join('')}
+            </div>
+            <div class="control-row">
+                ${p.audio ? `<button class="audio-btn" onclick="new Audio('${p.audio}').play()">🎵 SOUND</button>` : '<div style="flex:1"></div>'}
+                <button class="ok-btn" onclick="btnPush(${idx}, 'OK', '${p.a}', false)">CONFIRM (OK)</button>
+            </div>
+            <div class="feedback" id="fb-${idx}"></div>
+        `;
     }
 
-    function handleClick(monitorIdx, val, correct, isMulti, btn) {
-        const fb = document.getElementById(`fb-${monitorIdx}`);
-        
+    function btnPush(idx, val, correct, isMulti, btn) {
         if (isMulti) {
-            // 다중 선택 (예: 135)
-            if (val === '정답') {
-                checkFinal(monitorIdx, selectedAnswers[monitorIdx], correct);
-            } else {
-                if (!selectedAnswers[monitorIdx].includes(val)) {
-                    selectedAnswers[monitorIdx] += val;
-                    btn.classList.add('selected');
-                }
+            if (val === 'OK') checkFinal(idx, selectedAnswers[idx], correct);
+            else if (!selectedAnswers[idx].includes(val)) {
+                selectedAnswers[idx] += val;
+                btn.classList.add('selected');
             }
         } else {
-            // 단일 선택
-            checkFinal(monitorIdx, val, correct);
+            if (val === 'OK') checkFinal(idx, "정답", correct);
+            else checkFinal(idx, val, correct);
         }
     }
 
     function checkFinal(idx, val, correct) {
         const fb = document.getElementById(`fb-${idx}`);
-        const sortedVal = val.split('').sort().join('');
-        const sortedCorrect = correct.split('').sort().join('');
+        const sVal = val.split('').sort().join('');
+        const sCor = correct.split('').sort().join('');
 
-        if (val === correct || sortedVal === sortedCorrect || correct === "정답") {
+        if (val === correct || (val !== "" && sVal === sCor) || correct === "정답") {
             fb.innerText = "ACCESS GRANTED"; fb.style.color = "var(--success)";
+            setTimeout(() => setProblem(idx), 500);
         } else {
             fb.innerText = "ACCESS DENIED"; fb.style.color = "var(--fail)";
+            applyPenalty(idx);
         }
     }
 
-    function tick() {
+    function applyPenalty(idx) {
+        const m = document.getElementById(`m${idx}`);
+        m.classList.add('locked');
+        setTimeout(() => { m.classList.remove('locked'); setProblem(idx); }, 10000);
+    }
+
+    function globalTimer() {
         timeLeft -= 0.15;
         document.getElementById('timer-fill').style.width = timeLeft + "%";
         if (timeLeft <= 0) {
-            document.querySelectorAll('.explosion').forEach(ex => ex.style.display = 'block');
-            setTimeout(() => { timeLeft = 100; render(); }, 500);
+            timeLeft = 100;
+            for(let i=0; i<4; i++) {
+                if(!document.getElementById(`m${i}`).classList.contains('locked')) setProblem(i);
+            }
         }
     }
 
-    setInterval(tick, 20);
-    render();
+    for(let i=0; i<4; i++) setProblem(i);
+    setInterval(globalTimer, 20);
 </script>
 </body>
 </html>
