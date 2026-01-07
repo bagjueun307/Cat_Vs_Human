@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>고양이 vs 사람 대결</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: 'Malgun Gothic', sans-serif; text-align: center; margin: 0; overflow: hidden; }
+        #timer-container { font-size: 2rem; padding: 10px; background: #333; }
+        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; height: 85vh; gap: 15px; padding: 15px; }
+        .monitor { border: 8px solid #444; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        /* 팀별 테마 */
+        .human-team { background: #1e3a8a; border-color: #3b82f6; } /* 사람 팀 (인간 지식 필요) */
+        .cat-team { background: #3f3f3f; border-color: #fbbf24; }   /* 고양이 팀 (고양이 역할 수행) */
+        
+        .question-text { font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; word-break: keep-all; }
+        input { font-size: 1.2rem; padding: 10px; width: 70%; border-radius: 10px; border: none; text-align: center; }
+        .feedback { height: 30px; margin-top: 15px; font-weight: bold; font-size: 1.1rem; }
+        .highlight { color: #ffeb3b; }
+    </style>
+</head>
+<body>
+
+    <div id="timer-container">위치 전환까지: <span id="seconds" style="color:#ff4757">10</span>초</div>
+    <div id="game-board">
+        <div id="m1" class="monitor"></div>
+        <div id="m2" class="monitor"></div>
+        <div id="m3" class="monitor"></div>
+        <div id="m4" class="monitor"></div>
+    </div>
+
+    <script>
+        // 파일 내용을 바탕으로 구성한 문제 세트 [cite: 1, 4, 6, 7, 10, 11]
+        const humanQuestions = [
+            { q: "다음 중 페르시안 종의 고양이를 고르세요.", a: "정답" }, // [cite: 1]
+            { q: "아기 샴 고양이인 것을 고르세요. (억까 주의)", a: "정답" }, // [cite: 4]
+            { q: "고양이가 들어간 칸을 모두 고르세요.", a: "정답" }, // [cite: 3]
+            { q: "숨은 고양이가 있는 칸을 모두 누르시오.", a: "정답" }, // [cite: 4]
+            { q: "이 고양이가 있던 총 위치는 어디인가요?", a: "정답" } // [cite: 4]
+        ];
+
+        const catQuestions = [
+            { q: "방금 말한 단어는 무엇인가요? (냐 양 념 뤠...)", a: "냐갈념뤠오발내퀴후이라걀" }, // [cite: 6]
+            { q: "인간의 말입니다. '한국말을 알아요?'를 맞추세요.", a: "한국말을 알아요?" }, // [cite: 7]
+            { q: "고양이가 사오라고 한 것은 무엇인가요?", a: "오징어" }, // [cite: 10]
+            { q: "고양이가 사오지 말라고 한 것은 무엇인가요?", a: "생강" }, // [cite: 11]
+            { q: "현재 시간이 몇 시인지 맞추세요.", a: "정답" } // [cite: 1]
+        ];
+
+        const monitors = [document.getElementById('m1'), document.getElementById('m2'), document.getElementById('m3'), document.getElementById('m4')];
+        let timeLeft = 10;
+
+        function shuffleAndAssign() {
+            // 0,1,2,3 숫자를 섞음
+            const roles = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+            
+            monitors.forEach((m, i) => {
+                m.innerHTML = '';
+                // 섞인 인덱스 중 0,1은 사람 문제, 2,3은 고양이 문제 배정
+                const isHumanSide = roles[i] < 2;
+                const teamClass = isHumanSide ? 'human-team' : 'cat-team';
+                const teamName = isHumanSide ? '👤 인간 전용 (난이도: 상)' : '🐱 고양이 전용 (난이도: 상)';
+                const qList = isHumanSide ? humanQuestions : catQuestions;
+                const qData = qList[Math.floor(Math.random() * qList.length)];
+
+                m.className = `monitor ${teamClass}`;
+                m.innerHTML = `
+                    <div style="font-size:0.9rem; opacity:0.8; margin-bottom:10px;">${teamName}</div>
+                    <div class="question-text">${qData.q}</div>
+                    <input type="text" placeholder="정답을 입력하고 Enter" onkeydown="checkAnswer(event, this, '${qData.a}')">
+                    <div class="feedback"></div>
+                `;
+            });
+        }
+
+        function checkAnswer(event, input, correct) {
+            if (event.key === 'Enter') {
+                const feedback = input.nextElementSibling;
+                if (input.value.trim() === correct || correct === "정답") { // "정답"은 예시용 허용
+                    feedback.innerText = "⭕ 정답! 다음 문제 대기 중...";
+                    feedback.style.color = "#2ecc71";
+                    input.style.border = "3px solid #2ecc71";
+                    // 정답 시 1초 후 해당 칸만 문제 교체 가능
+                } else {
+                    feedback.innerText = "❌ 틀렸습니다! 다시 생각해보세요.";
+                    feedback.style.color = "#ff4757";
+                    input.style.border = "3px solid #ff4757";
+                }
+            }
+        }
+
+        // 10초 타이머 및 랜덤 교체 로직
+        setInterval(() => {
+            timeLeft--;
+            document.getElementById('seconds').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                timeLeft = 10;
+                shuffleAndAssign();
+            }
+        }, 1000);
+
+        // 게임 시작
+        shuffleAndAssign();
+    </script>
+</body>
+</html>
