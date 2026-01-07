@@ -2,58 +2,50 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>CAT vs HUMAN: PERFECT GRID SYSTEM</title>
+    <title>CAT vs HUMAN: OVERLAY SYSTEM V16</title>
     <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --bg: #000; 
-            --human-main: #2980b9; --human-bg: #d6eaf8;
-            --cat-main: #d35400; --cat-bg: #fbeee6;
-            --dark: #2c3e50; --fail: #c0392b; --success: #27ae60;
+        :root { --bg: #000; --human-main: #2980b9; --cat-main: #d35400; }
+        body { background: var(--bg); color: white; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; }
+        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100vw; height: 100vh; gap: 10px; padding: 10px; box-sizing: border-box; }
+        
+        .monitor { position: relative; border: 5px solid; display: flex; flex-direction: column; background: #fff; border-radius: 12px; overflow: hidden; transition: 0.3s; }
+        .monitor.human-zone { border-color: var(--human-main); }
+        .monitor.cat-zone { border-color: var(--cat-main); }
+        .monitor.locked { filter: grayscale(1) brightness(0.3); pointer-events: none; }
+
+        /* 타이머 바 */
+        .m-timer { width: 100%; height: 10px; background: #eee; position: relative; }
+        .m-fill { width: 100%; height: 100%; background: #444; transition: width 0.1s linear; }
+        .preparing .m-fill { background: #f1c40f; }
+
+        /* 핵심: 이미지 위에 겹쳐진 키패드 */
+        .stage-area { position: relative; flex-grow: 1; width: 100%; background: #000; display: flex; justify-content: center; align-items: center; }
+        .game-img { width: 100%; height: 100%; object-fit: contain; }
+        
+        .overlay-pad { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); 
+            z-index: 10; 
         }
-        body { background: var(--bg); color: white; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
-        
-        #header { background: #1a1a1a; width: 100%; padding: 5px 0; text-align: center; border-bottom: 2px solid #333; font-size: 0.8rem; }
-        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100vw; height: 94vh; gap: 6px; padding: 6px; box-sizing: border-box; }
-        
-        .monitor { position: relative; border: 5px solid; display: flex; flex-direction: column; padding: 8px; transition: 0.3s; box-sizing: border-box; }
-        .monitor.human-zone { background: var(--human-bg); border-color: var(--human-main); color: var(--dark); }
-        .monitor.cat-zone { background: var(--cat-bg); border-color: var(--cat-main); color: var(--dark); }
-
-        /* 흑백 패널티 상태 */
-        .monitor.locked { filter: grayscale(1) brightness(0.4); pointer-events: none; }
-        .monitor.locked::after { content: "오답! 5초 대기"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff7675; font-size: 1.5rem; text-align: center; z-index: 100; text-shadow: 2px 2px #000; width: 100%; }
-
-        .m-timer-wrapper { width: 100%; height: 6px; background: #bbb; margin-bottom: 5px; }
-        .m-timer-fill { width: 100%; height: 100%; background: #444; transition: width 0.1s linear; }
-
-        .tag { position: absolute; top: 8px; right: 8px; padding: 1px 6px; font-size: 0.7rem; color: white; border-radius: 3px; }
-        .human-zone .tag { background: var(--human-main); }
-        .cat-zone .tag { background: var(--cat-main); }
-
-        .content-area { width: 100%; height: 35%; background: white; border: 2px solid #333; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 5px; }
-        img, video { max-width: 100%; max-height: 100%; object-fit: contain; }
-
-        /* 4x4 완벽 격자 키패드 */
-        .button-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; width: 160px; margin: 0 auto; }
-        .num-btn { 
-            aspect-ratio: 1/1; background: white; border: 2px solid #333; 
-            font-family: 'DungGeunMo'; font-size: 0.9rem; cursor: pointer;
-            box-shadow: 0 2px 0 #999;
+        .grid-btn { 
+            border: 1px solid rgba(255,255,255,0.1); background: transparent; 
+            cursor: pointer; transition: 0.2s; outline: none;
         }
-        .num-btn:active { transform: translateY(1px); box-shadow: 0 0px 0 #999; }
-        .num-btn.selected { background: #333 !important; color: white !important; }
-        
-        .control-row { display: flex; gap: 4px; width: 160px; margin: 4px auto; }
-        .ok-btn { flex: 2; height: 30px; background: #333; color: white; border: none; font-family: 'DungGeunMo'; cursor: pointer; font-size: 0.8rem; }
-        .audio-btn { flex: 1; height: 30px; background: #555; color: white; border: none; font-family: 'DungGeunMo'; cursor: pointer; font-size: 0.6rem; }
+        .grid-btn:active { background: rgba(255, 255, 255, 0.4); }
+        .grid-btn.selected { background: rgba(255, 255, 0, 0.3); border: 2px solid yellow; }
+        .grid-btn:disabled { cursor: default; }
 
-        .overlay-msg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; font-size: 2.5rem; font-weight: bold; z-index: 50; pointer-events: none; text-shadow: 3px 3px #000; }
+        /* 하단 컨트롤 */
+        .bottom-bar { display: flex; padding: 8px; background: #f8f9fa; border-top: 2px solid #ddd; gap: 5px; align-items: center; }
+        .ok-btn { flex-grow: 1; height: 40px; background: #2c3e50; color: white; border: none; font-family: 'DungGeunMo'; border-radius: 5px; cursor: pointer; }
+        .audio-btn { width: 60px; height: 40px; background: #7f8c8d; color: white; border: none; font-size: 0.7rem; border-radius: 5px; }
+
+        .msg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; z-index: 100; font-size: 3rem; font-weight: bold; pointer-events: none; text-shadow: 3px 3px #000; }
     </style>
 </head>
 <body>
 
-<div id="header">[ CAT vs HUMAN ] SYSTEM V10</div>
 <div id="game-board">
     <div id="m0" class="monitor"></div>
     <div id="m1" class="monitor"></div>
@@ -64,119 +56,93 @@
 <script>
     const raw = (url) => url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
 
-    const problemDB = [
-        { type: 'human', q: "[보기] 고양이가 몇 번 때리나요?", a: "정답", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), video: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88%20%EB%95%8C%EB%A6%AC%EB%8A%94%20%EA%B3%A0%EC%96%91%EC%9D%B4.mp4"), multi: false },
-        { type: 'human', q: "페르시안 고양이를 고르세요.", a: "1", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/1.JPG"), multi: false },
-        { type: 'human', q: "츄르(황태)를 고르세요.", a: "2", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/2.JPG"), multi: false },
-        { type: 'cat', q: "몇 시 인지 맞추세요.", a: "9", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/3.JPG"), multi: false },
-        { type: 'human', q: "고양이가 아닌 것을 누르세요.", a: "정답", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG"), multi: false },
-        { type: 'human', q: "틀린 곳은 총 몇 군데?", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/5.JPG"), multi: false },
-        { type: 'human', q: "고양이 칸 번호를 모두 누르세요.", a: "135", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/6.JPG"), multi: true },
-        { type: 'human', q: "숨은 고양이 칸을 모두 누르세요.", a: "24", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/7.JPG"), multi: true },
-        { type: 'human', q: "아기 샴 고양이를 고르세요.", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/8.JPG"), multi: false },
-        { type: 'cat', q: "고양이가 있던 위치 개수는?", a: "3", img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/9.JPG"), multi: false },
-        { type: 'cat', q: "듣기 1: 소리를 듣고 정답 확인!", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%EB%82%98%EA%B1%B0%EB%9E%98%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), multi: false },
-        { type: 'cat', q: "듣기 2: 거꾸로 말한 문장은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%ED%95%9C%EA%B5%AD%EB%A7%90%EC%9D%84%20%EC%95%8C%EC%95%84%EC%9A%94%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%202%EB%B2%88.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C2.JPG"), multi: false },
-        { type: 'cat', q: "듣기 3: 사오라고 한 음식은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%203%EB%B2%88%20%EC%98%A4%EC%A7%95%EC%96%B4.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C3.JPG"), multi: false },
-        { type: 'cat', q: "듣기 4: 사오지 말라는 음식은?", a: "정답", audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%204%EB%B2%88%20%EC%83%9D%EA%B0%81%20%EC%82%AC%EC%98%A4%EC%A7%80%20%EB%A7%88%EC%84%B8%EC%9A%94.m4a"), img: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C4.JPG"), multi: false }
+    const db = [
+        { id: '보기', type: 'human', q: "[보기] 고양이 타격 횟수(정답:10)", a: "10", info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), video: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88%20%EB%95%8C%EB%A6%AC%EB%8A%94%20%EA%B3%A0%EC%96%91%EC%9D%B4.mp4"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%EB%AC%B8%EC%A0%9C1-1.JPG") },
+        { id: '4', type: 'human', q: "4번: 고양이가 없는 곳은?", a: "13", info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG") },
+        { id: '7', type: 'human', q: "7번: 숨은 고양이 모두 터치!", a: "24", multi: true, info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/7.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/7.JPG") },
+        { id: '9', type: 'cat', q: "9번: 고양이 위치 기억!", a: "159", multi: true, info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/9.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/9-1.JPG") },
+        { id: '듣기1', type: 'cat', q: "듣기 1: 소리 위치 터치!", a: "6", info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%EB%82%98%EA%B1%B0%EB%9E%98%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88.m4a"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1-1.JPG") }
     ];
 
-    let monitorStates = [
-        { time: 100, locked: false, selected: "", currentP: null },
-        { time: 100, locked: false, selected: "", currentP: null },
-        { time: 100, locked: false, selected: "", currentP: null },
-        { time: 100, locked: false, selected: "", currentP: null }
-    ];
+    let states = Array(4).fill().map(() => ({ time: 100, status: 'PREP', selected: "", current: null }));
 
-    function setProblem(idx) {
+    function init(idx) {
+        states[idx].current = db[Math.floor(Math.random() * db.length)];
+        states[idx].status = 'PREP';
+        states[idx].time = 100;
+        states[idx].selected = "";
+        render(idx);
+    }
+
+    function render(idx) {
         const m = document.getElementById(`m${idx}`);
-        const p = problemDB[Math.floor(Math.random() * problemDB.length)];
-        monitorStates[idx].currentP = p;
-        monitorStates[idx].selected = "";
-        monitorStates[idx].time = 100;
+        const s = states[idx];
+        const p = s.current;
         
-        const isH = p.type === 'human';
-        m.className = `monitor ${isH ? 'human-zone' : 'cat-zone'}`;
-        let visual = p.video ? `<video src="${p.video}" autoplay loop muted playsinline></video>` : `<img src="${p.img}">`;
+        m.className = `monitor ${p.type}-zone ${s.status === 'PREP' ? 'preparing' : ''} ${s.status === 'FAIL' ? 'locked' : ''}`;
         
+        let visual = (s.status === 'PREP' && p.video) ? `<video src="${p.video}" class="game-img" autoplay loop muted></video>` : `<img src="${s.status === 'QUEST' ? p.quest : p.info}" class="game-img">`;
+
         m.innerHTML = `
-            <div class="overlay-msg" id="ov-${idx}"></div>
-            <div class="m-timer-wrapper"><div class="m-timer-fill" id="tfill-${idx}"></div></div>
-            <div class="tag">${isH ? '인간' : '고양이'}</div>
-            <div style="font-size:0.7rem; text-align:center; height:1.2rem; font-weight:bold;">${p.q}</div>
-            <div class="content-area">${visual}</div>
-            <div class="button-pad">
-                ${Array.from({length: 16}, (_, i) => i + 1).map(n => `<button class="num-btn" id="btn-${idx}-${n}" onclick="btnPush(${idx}, '${n}')">${n}</button>`).join('')}
+            <div class="msg-layer" id="msg-${idx}" style="display:${s.status==='SUCCESS'||s.status==='FAIL'?'flex':'none'}">
+                ${s.status==='SUCCESS'?'<span style="color:#2ecc71">정답!</span>':'<span style="color:#ff7675">오답!</span>'}
             </div>
-            <div class="control-row">
-                ${p.audio ? `<button class="audio-btn" onclick="new Audio('${p.audio}').play()">🎵 듣기</button>` : '<div style="flex:1"></div>'}
-                <button class="ok-btn" onclick="btnPush(${idx}, 'OK')">확인 (OK)</button>
+            <div class="m-timer"><div class="m-fill" id="fill-${idx}" style="width:${s.time}%"></div></div>
+            <div style="color:#333; font-size:0.7rem; padding:5px; text-align:center; font-weight:bold;">${s.status==='PREP'?'[기억하세요]':(s.status==='QUEST'?'[위치를 터치!]':'[정답 확인]')}</div>
+            <div class="stage-area">
+                ${visual}
+                <div class="overlay-pad">
+                    ${Array.from({length:16}, (_, i) => `<button class="grid-btn ${s.selected.includes(i+1)?'selected':''}" ${s.status!=='QUEST'?'disabled':''} onclick="tap(${idx}, ${i+1})"></button>`).join('')}
+                </div>
+            </div>
+            <div class="bottom-bar">
+                ${p.audio?`<button class="audio-btn" onclick="new Audio('${p.audio}').play()">🎵</button>`:''}
+                <button class="ok-btn" ${s.status!=='QUEST'?'disabled':''} onclick="tap(${idx}, 'OK')">확인 (OK)</button>
             </div>
         `;
     }
 
-    function btnPush(idx, val) {
-        if (monitorStates[idx].locked) return;
-        const p = monitorStates[idx].currentP;
+    function tap(idx, val) {
+        const s = states[idx];
+        if(s.status !== 'QUEST') return;
 
-        if (p.multi) {
-            if (val === 'OK') checkFinal(idx, monitorStates[idx].selected, p.a);
-            else if (!monitorStates[idx].selected.includes(val)) {
-                monitorStates[idx].selected += val;
-                document.getElementById(`btn-${idx}-${val}`).classList.add('selected');
+        if(val === 'OK') {
+            const correct = s.current.a;
+            const isCorrect = s.current.multi ? s.selected.split('').sort().join('') === correct.split('').sort().join('') : (s.selected === correct || (s.selected === "" && correct === "정답"));
+            
+            if(isCorrect || (s.current.a === "10" && s.selected === "10")) {
+                s.status = 'SUCCESS'; render(idx);
+                setTimeout(() => init(idx), 2000);
+            } else {
+                s.status = 'FAIL'; render(idx);
+                setTimeout(() => init(idx), 5000);
             }
         } else {
-            if (val === 'OK') checkFinal(idx, "정답", p.a);
-            else checkFinal(idx, val, p.a);
-        }
-    }
-
-    function checkFinal(idx, val, correct) {
-        const ov = document.getElementById(`ov-${idx}`);
-        const sVal = val.split('').sort().join('');
-        const sCor = correct.split('').sort().join('');
-
-        if (val === correct || (val !== "" && sVal === sCor) || correct === "정답") {
-            ov.innerText = "정답!"; ov.style.color = "#2ecc71";
-            ov.style.display = "flex";
-            monitorStates[idx].locked = true;
-            // 정답이면 0.4초만 보여주고 즉시 다음 문제
-            setTimeout(() => {
-                ov.style.display = "none";
-                monitorStates[idx].locked = false;
-                setProblem(idx);
-            }, 400);
-        } else {
-            ov.innerText = "오답!"; ov.style.color = "#e74c3c";
-            ov.style.display = "flex";
-            applyPenalty(idx);
-        }
-    }
-
-    function applyPenalty(idx) {
-        const m = document.getElementById(`m${idx}`);
-        monitorStates[idx].locked = true;
-        m.classList.add('locked');
-        setTimeout(() => {
-            m.classList.remove('locked');
-            document.getElementById(`ov-${idx}`).style.display = "none";
-            monitorStates[idx].locked = false;
-            setProblem(idx); // 오답 패널티 후 새로운 문제
-        }, 5000);
-    }
-
-    function updateTimers() {
-        for(let i=0; i<4; i++) {
-            if (!monitorStates[i].locked) {
-                monitorStates[i].time -= 0.15;
-                document.getElementById(`tfill-${i}`).style.width = monitorStates[i].time + "%";
-                if (monitorStates[i].time <= 0) setProblem(i);
+            if(s.current.multi) {
+                if(!s.selected.includes(val)) s.selected += val;
+                render(idx);
+            } else {
+                s.selected = val.toString();
+                render(idx);
             }
         }
     }
 
-    for(let i=0; i<4; i++) setProblem(i);
-    setInterval(updateTimers, 20);
+    setInterval(() => {
+        states.forEach((s, i) => {
+            if(s.status === 'PREP' || s.status === 'QUEST') {
+                s.time -= 0.4;
+                const fill = document.getElementById(`fill-${i}`);
+                if(fill) fill.style.width = s.time + "%";
+                if(s.time <= 0) {
+                    if(s.status === 'PREP') { s.status = 'QUEST'; s.time = 100; render(i); }
+                    else init(i);
+                }
+            }
+        });
+    }, 40);
+
+    for(let i=0; i<4; i++) init(i);
 </script>
 </body>
 </html>
