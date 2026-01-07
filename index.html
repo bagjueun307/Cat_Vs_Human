@@ -2,146 +2,150 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>CAT vs HUMAN: HYBRID SYSTEM V18</title>
+    <title>고양이 판 뒤집기 대결</title>
     <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000; --h-main: #2980b9; --c-main: #d35400; }
-        body { background: var(--bg); color: white; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; }
-        #game-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100vw; height: 100vh; gap: 8px; padding: 10px; box-sizing: border-box; }
+        body { background: #f0e6d2; font-family: 'DungGeunMo', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+        #header { width: 100%; background: #333; color: white; padding: 10px; text-align: center; display: flex; justify-content: space-around; align-items: center; }
         
-        .monitor { position: relative; border: 4px solid; background: #eee; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 10px; color: #222; }
-        .h-zone { border-color: var(--h-main); }
-        .c-zone { border-color: var(--c-main); }
-        .locked { filter: grayscale(1) brightness(0.4); pointer-events: none; }
+        /* 스코어보드 */
+        .score-box { font-size: 1.5rem; padding: 5px 20px; border-radius: 10px; min-width: 100px; }
+        .red-score { background: #e74c3c; color: white; }
+        .blue-score { background: #3498db; color: white; }
+        #timer { font-size: 2rem; color: #f1c40f; }
 
-        .timer-bar { width: 100%; height: 6px; background: #ccc; border-radius: 3px; margin-bottom: 5px; overflow: hidden; }
-        .timer-fill { width: 100%; height: 100%; background: #444; transition: width 0.1s linear; }
-        .preparing .timer-fill { background: #f1c40f; }
+        /* 카드판 영역 */
+        #board { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 10px; 
+            padding: 20px; 
+            max-width: 900px; 
+            perspective: 1000px;
+        }
+        .card {
+            width: 110px; height: 60px;
+            background: #bdc3c7; /* 초기 중립색 */
+            border-radius: 5px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 0.9rem; font-weight: bold;
+            box-shadow: 0 4px 0 #95a5a6;
+            transition: all 0.3s;
+            text-align: center;
+            padding: 5px;
+        }
+        .card.red { background: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; transform: rotateY(180deg); }
+        .card.blue { background: #3498db; color: white; box-shadow: 0 4px 0 #2980b9; transform: rotateY(180deg); }
 
-        /* [일반형] 이미지 영역 */
-        .standard-img-area { width: 100%; height: 120px; background: #fff; margin-bottom: 5px; display: flex; justify-content: center; align-items: center; border: 1px solid #ddd; }
-        .standard-img-area img { max-width: 100%; max-height: 100%; object-fit: contain; }
-
-        /* [격자형] 이미지+키패드 겹침 영역 */
-        .grid-stage { position: relative; width: 180px; height: 180px; background: #000; border: 2px solid #333; margin-bottom: 5px; }
-        .grid-img { width: 100%; height: 100%; object-fit: contain; position: absolute; }
+        /* 하단 입력창 */
+        #input-area { margin-top: 20px; display: flex; gap: 15px; align-items: center; }
+        input { padding: 10px; font-size: 1.2rem; font-family: 'DungGeunMo'; border: 3px solid #333; border-radius: 5px; width: 250px; }
         
-        .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); z-index: 5; }
-        
-        /* 버튼 스타일 */
-        .num-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; width: 180px; }
-        .tile-btn { aspect-ratio: 1/1; background: #fff; border: 2px solid #333; cursor: pointer; font-family: 'DungGeunMo'; }
-        .grid-tile { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: transparent; } /* 격자형은 버튼 투명하게 */
-        
-        .tile-btn.active { background: rgba(241, 196, 15, 0.5) !important; border-color: #f1c40f; color: #fff; }
-        .tile-btn:disabled { opacity: 0.5; }
-
-        .ctrl-row { display: flex; width: 180px; gap: 4px; margin-top: 5px; }
-        .ok-btn { flex: 2; height: 32px; background: #2c3e50; color: white; border: none; cursor: pointer; font-family: 'DungGeunMo'; }
-        .audio-btn { flex: 1; height: 32px; background: #7f8c8d; color: white; border: none; font-size: 0.7rem; }
-        .status-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; font-size: 2.5rem; text-shadow: 2px 2px #000; display: none; }
+        .team-btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-family: 'DungGeunMo'; font-size: 1rem; color: white; }
+        .btn-red { background: #e74c3c; }
+        .btn-blue { background: #3498db; }
+        .active-team { outline: 5px solid #f1c40f; transform: scale(1.1); }
     </style>
 </head>
 <body>
 
-<div id="game-board">
-    <div id="m0" class="monitor"></div>
-    <div id="m1" class="monitor"></div>
-    <div id="m2" class="monitor"></div>
-    <div id="m3" class="monitor"></div>
+<div id="header">
+    <div class="score-box red-score">빨강: <span id="r-count">0</span></div>
+    <div id="timer">30</div>
+    <div class="score-box blue-score">파랑: <span id="b-count">0</span></div>
+</div>
+
+<div id="board"></div>
+
+<div id="input-area">
+    <button id="btn-red" class="team-btn btn-red" onclick="selectTeam('red')">빨강팀 참여</button>
+    <input type="text" id="word-input" placeholder="팀을 선택하고 단어를 입력!" disabled>
+    <button id="btn-blue" class="team-btn btn-blue" onclick="selectTeam('blue')">파랑팀 참여</button>
 </div>
 
 <script>
-    const raw = (url) => url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
-
-    const db = [
-        { id: '보기', type: 'h', isGrid: true, q: "타격 횟수 기억 (정답:10)", a: "10", info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%B3%B4%EA%B8%B0%EB%AC%B8%EC%A0%9C1-1.JPG") },
-        { id: '1', type: 'h', isGrid: false, q: "페르시안 고양이", a: "1", info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/1.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/1.JPG") },
-        { id: '4', type: 'h', isGrid: true, q: "고양이 위치 터치", a: "13", info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/4.JPG") },
-        { id: '9', type: 'c', isGrid: true, q: "고양이 위치 기억", a: "159", multi: true, info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/9.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/9-1.JPG") },
-        { id: '듣기1', type: 'c', isGrid: true, q: "소리 위치 터치", a: "6", info: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1.JPG"), quest: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EB%93%A3%EA%B8%B0%EB%AC%B8%EC%A0%9C1-1.JPG"), audio: raw("https://github.com/bagjueun307/Cat_Vs_Human/blob/main/%EA%B3%A0%EC%96%91%EC%9D%B4%20%EB%82%98%EA%B1%B0%EB%9E%98%20%EB%93%A3%EA%B8%B0%20%EB%AC%B8%EC%A0%9C%201%EB%B2%88.m4a") }
+    const catWords = [
+        "고양이", "야옹이", "츄르", "스크래쳐", "캣잎", "그루밍", "젤리", "수염", "꾹꾹이", "골골송", 
+        "냥냥펀치", "식빵자세", "꼬리", "사료", "모래", "캣타워", "집사", "털실", "방울", "낚시놀이",
+        "삼색이", "치즈태비", "고등어", "샴", "러시안블루", "페르시안", "먼치킨", "뱅갈", "길냥이", "하악질",
+        "무릎냥", "개냥이", "사냥", "낮잠", "햇살"
     ];
 
-    let states = Array(4).fill().map(() => ({ time: 100, status: 'PREP', selected: "", current: null }));
+    let currentTeam = null;
+    let timeLeft = 30;
+    let gameActive = false;
+    let timerInterval;
 
-    function init(idx) {
-        states[idx].current = db[Math.floor(Math.random() * db.length)];
-        states[idx].status = 'PREP';
-        states[idx].time = 100;
-        states[idx].selected = "";
-        render(idx);
-    }
+    const board = document.getElementById('board');
+    const input = document.getElementById('word-input');
 
-    function render(idx) {
-        const m = document.getElementById(`m${idx}`);
-        const s = states[idx];
-        const p = s.current;
-        m.className = `monitor ${p.type}-zone ${s.status === 'PREP' ? 'preparing' : ''} ${s.status === 'FAIL' ? 'locked' : ''}`;
-        
-        let contentHtml = "";
-        if (p.isGrid) {
-            // [격자형] 이미지와 키패드 결합형
-            contentHtml = `
-                <div class="grid-stage">
-                    <img src="${s.status === 'QUEST' ? p.quest : p.info}" class="grid-img">
-                    <div class="grid-overlay">
-                        ${Array.from({length:16}, (_, i) => `<button class="tile-btn grid-tile ${s.selected.includes(i+1)?'active':''}" ${s.status!=='QUEST'?'disabled':''} onclick="tap(${idx}, ${i+1})">${i+1}</button>`).join('')}
-                    </div>
-                </div>`;
-        } else {
-            // [일반형] 이미지 따로 키패드 따로
-            contentHtml = `
-                <div class="standard-img-area"><img src="${p.info}"></div>
-                <div class="num-pad">
-                    ${Array.from({length:16}, (_, i) => `<button class="tile-btn ${s.selected.includes(i+1)?'active':''}" ${s.status!=='QUEST'?'disabled':''} onclick="tap(${idx}, ${i+1})">${i+1}</button>`).join('')}
-                </div>`;
-        }
-
-        m.innerHTML = `
-            <div class="status-msg" id="msg-${idx}" style="display:${s.status==='SUCCESS'||s.status==='FAIL'?'block':'none'}">${s.status==='SUCCESS'?'<span style="color:#2ecc71">정답!</span>':'<span style="color:#ff7675">오답!</span>'}</div>
-            <div class="timer-bar"><div class="timer-fill" id="fill-${idx}" style="width:${s.time}%"></div></div>
-            <div style="font-size:0.7rem; font-weight:bold; margin-bottom:5px;">${p.q}</div>
-            ${contentHtml}
-            <div class="ctrl-row">
-                ${p.audio?`<button class="audio-btn" onclick="new Audio('${p.audio}').play()">🎵 듣기</button>`:'<div style="flex:1"></div>'}
-                <button class="ok-btn" ${s.status!=='QUEST'?'disabled':''} onclick="tap(${idx}, 'OK')">확인 (OK)</button>
-            </div>`;
-    }
-
-    function tap(idx, val) {
-        const s = states[idx];
-        if(s.status !== 'QUEST') return;
-        if(val === 'OK') {
-            const correct = s.current.a;
-            const isCorrect = s.current.multi ? s.selected.split('').sort().join('') === correct.split('').sort().join('') : s.selected === correct;
-            if(isCorrect) { s.status = 'SUCCESS'; render(idx); setTimeout(() => init(idx), 2000); }
-            else { s.status = 'FAIL'; render(idx); setTimeout(() => init(idx), 5000); }
-        } else {
-            if(s.current.multi) {
-                if(!s.selected.includes(val)) s.selected += val;
-                render(idx);
-            } else {
-                s.selected = val.toString();
-                render(idx);
-            }
-        }
-    }
-
-    setInterval(() => {
-        states.forEach((s, i) => {
-            if(s.status === 'PREP' || s.status === 'QUEST') {
-                s.time -= 0.4;
-                const fill = document.getElementById(`fill-${i}`);
-                if(fill) fill.style.width = s.time + "%";
-                if(s.time <= 0) {
-                    if(s.status === 'PREP') { s.status = 'QUEST'; s.time = 100; render(i); }
-                    else init(i);
-                }
-            }
+    // 카드 생성
+    function createBoard() {
+        board.innerHTML = '';
+        catWords.forEach(word => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerText = word;
+            card.id = `card-${word}`;
+            board.appendChild(card);
         });
-    }, 40);
+    }
 
-    for(let i=0; i<4; i++) init(i);
+    // 팀 선택
+    function selectTeam(team) {
+        if(gameActive) return;
+        currentTeam = team;
+        document.getElementById('btn-red').classList.remove('active-team');
+        document.getElementById('btn-blue').classList.remove('active-team');
+        document.getElementById(`btn-${team}`).classList.add('active-team');
+        
+        input.disabled = false;
+        input.focus();
+        if(!gameActive && timeLeft === 30) startGame();
+    }
+
+    function startGame() {
+        gameActive = true;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+            if(timeLeft <= 0) endGame();
+        }, 1000);
+    }
+
+    input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' && gameActive) {
+            const word = input.value.trim();
+            const card = document.getElementById(`card-${word}`);
+            
+            if(card) {
+                card.className = `card ${currentTeam}`;
+                updateScore();
+            }
+            input.value = '';
+        }
+    });
+
+    function updateScore() {
+        const reds = document.querySelectorAll('.card.red').length;
+        const blues = document.querySelectorAll('.card.blue').length;
+        document.getElementById('r-count').innerText = reds;
+        document.getElementById('b-count').innerText = blues;
+    }
+
+    function endGame() {
+        gameActive = false;
+        clearInterval(timerInterval);
+        input.disabled = true;
+        const reds = parseInt(document.getElementById('r-count').innerText);
+        const blues = parseInt(document.getElementById('b-count').innerText);
+        
+        let winner = reds > blues ? "빨강팀 승리!" : (blues > reds ? "파랑팀 승리!" : "무승부!");
+        alert(`게임 종료!\n${winner}\n빨강: ${reds} vs 파랑: ${blues}`);
+        location.reload(); // 게임 재시작
+    }
+
+    createBoard();
 </script>
 </body>
 </html>
