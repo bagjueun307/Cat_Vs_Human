@@ -2,128 +2,146 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>CAT PAN FLIP: CENTRAL BONUS V8</title>
+    <title>컴퓨터실 몰래 게임: 선생님의 눈 V11</title>
     <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
-        body { background: #000; color: white; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
-        #header { width: 100%; padding: 10px; background: #111; display: flex; flex-direction: column; align-items: center; border-bottom: 2px solid #444; z-index: 100; }
-        .time-container { width: 90%; height: 15px; background: #333; border-radius: 10px; margin: 5px 0; overflow: hidden; }
+        body { background: #000; color: #00ff00; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        #header { width: 100%; padding: 10px; background: #222; display: flex; flex-direction: column; align-items: center; border-bottom: 4px inset #555; z-index: 100; }
+        .time-container { width: 90%; height: 15px; background: #111; border: 2px inset #555; margin: 5px 0; overflow: hidden; }
         #time-bar { width: 100%; height: 100%; background: #00ff00; transition: width 0.1s linear; }
 
-        /* 게임 그리드 */
-        #game-grid { 
-            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; 
-            width: 100vw; height: 85vh; gap: 10px; padding: 10px; box-sizing: border-box; 
-            transition: opacity 0.5s;
-        }
+        #game-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100vw; height: 85vh; gap: 15px; padding: 20px; box-sizing: border-box; }
         
-        .monitor { position: relative; border: 6px solid; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
-        .red-mon { border-color: #e74c3c; background: #2c0b0a; }
-        .blue-mon { border-color: #3498db; background: #0a172c; }
-
-        .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 5px; }
-        .card { width: 55px; height: 35px; background: #444; color: #888; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 0.65rem; transition: 0.2s; }
-        .card.red { background: #e74c3c; color: white; transform: scale(1.05); }
-        .card.blue { background: #3498db; color: white; transform: scale(1.05); }
-
-        .input-wrap { margin-top: 10px; width: 85%; }
-        input { width: 100%; padding: 10px; font-family: 'DungGeunMo'; font-size: 1.1rem; text-align: center; border-radius: 6px; border: 3px solid #777; outline: none; box-sizing: border-box; }
-        
-        /* 중앙 보너스 모달 */
-        #bonus-modal { 
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80%; background: rgba(0,0,0,0.95); border: 10px solid #f1c40f; 
-            border-radius: 20px; padding: 40px; display: none; flex-direction: column; 
-            align-items: center; z-index: 2000; box-shadow: 0 0 50px rgba(241, 196, 15, 0.5);
+        /* 모니터 및 선생님 레이아웃 */
+        .monitor-container { position: relative; display: flex; flex-direction: column; align-items: center; transition: all 0.6s; }
+        .teacher-box { 
+            width: 80px; height: 80px; font-size: 3rem; display: flex; justify-content: center; align-items: center;
+            background: #444; border: 4px solid #777; border-radius: 10px 10px 0 0; margin-bottom: -4px; transition: background 0.2s;
         }
-        #bonus-q { font-size: 2rem; color: #f1c40f; margin-bottom: 30px; text-align: center; line-height: 1.4; word-break: keep-all; }
-        #bonus-in { width: 90%; font-size: 1.8rem; padding: 15px; border: 5px solid #fff; background: #111; color: #fff; text-align: center; }
+        /* 선생님이 학생을 볼 때 (위험) */
+        .teacher-box.watching { background: #ff0000; border-color: #fff; animation: shake 0.1s infinite; }
 
-        #swap-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff0; color: #000; padding: 20px 40px; border-radius: 50px; font-size: 2.5rem; display: none; z-index: 1500; border: 5px solid #000; }
+        .monitor { width: 100%; position: relative; border: 8px outset #aaa; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+        .red-mon { border-color: #e74c3c; }
+        .blue-mon { border-color: #3498db; }
+
+        .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
+        .card { width: 45px; height: 25px; background: #333; color: #666; font-size: 0.55rem; display: flex; justify-content: center; align-items: center; border-radius: 2px; }
+        .card.red { background: #e74c3c; color: white; }
+        .card.blue { background: #3498db; color: white; }
+
+        .input-wrap { margin-top: 10px; width: 90%; }
+        input { width: 100%; padding: 8px; font-family: 'DungGeunMo'; background: #000; color: #0ff; border: 2px solid #0ff; outline: none; text-align: center; }
+
+        /* 보너스 모달 */
+        #bonus-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; background: #000; border: 5px solid #f1c40f; padding: 40px; display: none; flex-direction: column; align-items: center; z-index: 2000; }
+        
+        @keyframes shake { 0% { transform: rotate(2deg); } 100% { transform: rotate(-2deg); } }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div id="timer-text" style="font-size: 1.2rem;">40.0s</div>
+    <div id="timer-text">컵떡볶이 내기 종료까지: 40.0s</div>
     <div class="time-container"><div id="time-bar"></div></div>
+    <div style="font-size: 0.8rem; color: #ffeb3b;">선생님이 뒤돌아서 우리를 볼 때(빨간 배경)는 입력 금지!</div>
 </div>
 
-<div id="swap-msg">위치 셔플 중!!!</div>
-
 <div id="bonus-modal">
-    <div style="font-size: 1.2rem; color: #fff; margin-bottom: 10px;">⚡ BONUS ROUND ⚡</div>
-    <div id="bonus-q"></div>
-    <input type="text" id="bonus-in" placeholder="이곳에 정답을 입력하세요!">
-    <div style="margin-top: 20px; color: #aaa;">가장 먼저 입력한 팀이 카드 4개를 획득합니다!</div>
+    <div style="color: #f1c40f; font-size: 1.2rem; margin-bottom: 15px;">⚡ 마지막 타자 검정 ⚡</div>
+    <div id="bonus-q" style="font-size: 1.5rem; margin-bottom: 20px; text-align: center; color: #fff;"></div>
+    <input type="text" id="bonus-in" style="font-size: 1.5rem; width: 90%; border: 3px solid #f1c40f;">
 </div>
 
 <div id="game-grid">
-    <div id="mon-1" class="monitor red-mon">
-        <div class="board" id="b-1"></div>
-        <div class="input-wrap"><input type="text" id="in-1" placeholder="RED 1" onfocus="lastFocusedTeam='red'"></div>
+    <div id="cont-1" class="monitor-container" style="order:1;">
+        <div id="t-1" class="teacher-box">👨‍🏫</div>
+        <div id="mon-1" class="monitor red-mon"><div class="board" id="b-1"></div><div class="input-wrap"><input type="text" id="in-1" placeholder="RED 1" onfocus="lastTeam='red'"></div></div>
     </div>
-    <div id="mon-2" class="monitor blue-mon">
-        <div class="board" id="b-2"></div>
-        <div class="input-wrap"><input type="text" id="in-2" placeholder="BLUE 1" onfocus="lastFocusedTeam='blue'"></div>
+    <div id="cont-2" class="monitor-container" style="order:2;">
+        <div id="t-2" class="teacher-box">👨‍🏫</div>
+        <div id="mon-2" class="monitor blue-mon"><div class="board" id="b-2"></div><div class="input-wrap"><input type="text" id="in-2" placeholder="BLUE 1" onfocus="lastTeam='blue'"></div></div>
     </div>
-    <div id="mon-3" class="monitor red-mon">
-        <div class="board" id="b-3"></div>
-        <div class="input-wrap"><input type="text" id="in-3" placeholder="RED 2" onfocus="lastFocusedTeam='red'"></div>
+    <div id="cont-3" class="monitor-container" style="order:3;">
+        <div id="t-3" class="teacher-box">👨‍🏫</div>
+        <div id="mon-3" class="monitor red-mon"><div class="board" id="b-3"></div><div class="input-wrap"><input type="text" id="in-3" placeholder="RED 2" onfocus="lastTeam='red'"></div></div>
     </div>
-    <div id="mon-4" class="monitor blue-mon">
-        <div class="board" id="b-4"></div>
-        <div class="input-wrap"><input type="text" id="in-4" placeholder="BLUE 2" onfocus="lastFocusedTeam='blue'"></div>
+    <div id="cont-4" class="monitor-container" style="order:4;">
+        <div id="t-4" class="teacher-box">👨‍🏫</div>
+        <div id="mon-4" class="monitor blue-mon"><div class="board" id="b-4"></div><div class="input-wrap"><input type="text" id="in-4" placeholder="BLUE 2" onfocus="lastTeam='blue'"></div></div>
     </div>
 </div>
 
 <script>
     const catWords = ["고양이", "야옹이", "츄르", "젤리", "꾹꾹이", "골골송", "집사", "모래", "사료", "캣타워", "수염", "그루밍", "냥냥펀치", "꼬리", "낮잠", "햇살", "스크래쳐", "캣잎", "방울", "삼색이", "치즈", "고등어", "샴", "러블", "망토", "발바닥", "하악질", "개냥이", "사냥", "생선", "우유", "박스", "낚시", "무릎냥", "털공", "털갈이", "하품", "창밖", "숨바꼭질", "코인사"];
-    const bonusSentences = ["우리 고양이는 츄르보다 집사의 따뜻한 무릎을 더 좋아합니다", "부드러운 고양이 발바닥 젤리는 세상에서 가장 말랑말랑합니다", "세상 모든 고양이가 아프지 않고 행복하게 지냈으면 좋겠습니다"];
+    const bonusSentences = ["오늘 학교 끝나고 정문 앞 컵떡볶이 콜?", "선생님 뒤돌아 있을 때 몰래 하는 게임이 제일 꿀잼"];
 
     let timeLeft = 400;
-    let isBonusMode = false;
-    let currentBonusText = "";
-    let lastFocusedTeam = 'red'; // 보너스 정답자 판별용
+    let isBonus = false;
+    let isTeacherWatching = false; // 선생님이 학생을 보는 상태
+    let lastTeam = 'red';
+    let teamLog = { red: [], blue: [] };
 
     function init() {
         for(let i=1; i<=4; i++) {
-            const boardEl = document.getElementById(`b-${i}`);
+            const b = document.getElementById(`b-${i}`);
             catWords.forEach(w => {
-                const card = document.createElement('div');
-                card.className = 'card'; card.innerText = w; card.id = `c-${i}-${w}`;
-                boardEl.appendChild(card);
+                const c = document.createElement('div');
+                c.className = 'card'; c.innerText = w; c.id = `c-${i}-${w}`;
+                b.appendChild(c);
             });
             setupInput(i);
         }
-        setupBonusInput();
+        setupBonus();
         startTimers();
-    }
-
-    function shuffleMonitors() {
-        if(isBonusMode) return;
-        const msg = document.getElementById('swap-msg');
-        msg.style.display = 'block';
-        setTimeout(() => msg.style.display = 'none', 1000);
-
-        let orders = [1, 2, 3, 4].sort(() => Math.random() - 0.5);
-        for(let i=1; i<=4; i++) document.getElementById(`mon-${i}`).style.order = orders[i-1];
+        scheduleTeacher();
     }
 
     function startTimers() {
         setInterval(() => {
             timeLeft--;
-            const max = isBonusMode ? 200 : 400;
-            document.getElementById('time-bar').style.width = (timeLeft/max)*100 + "%";
-            document.getElementById('timer-text').innerText = isBonusMode ? "BONUS TIME: " + (timeLeft/10).toFixed(1) + "s" : (timeLeft/10).toFixed(1) + "s";
-            
+            document.getElementById('time-bar').style.width = (timeLeft/400)*100 + "%";
+            document.getElementById('timer-text').innerText = isBonus ? "보너스 타임!" : `컵떡볶이 내기 종료까지: ${(timeLeft/10).toFixed(1)}s`;
             if(timeLeft <= 0) {
-                if(!isBonusMode) startBonus();
-                else endBonus();
+                if(!isBonus) startBonus();
+                else finishGame();
             }
         }, 100);
 
-        setInterval(() => { if(!isBonusMode) shuffleMonitors(); }, 10000);
+        setInterval(() => {
+            if(!isBonus && !isTeacherWatching) {
+                let orders = [1,2,3,4].sort(()=>Math.random()-0.5);
+                for(let i=1; i<=4; i++) document.getElementById(`cont-${i}`).style.order = orders[i-1];
+            }
+        }, 10000);
+    }
+
+    // 선생님 감시 로직 (20초마다 2초간 감시)
+    function scheduleTeacher() {
+        setTimeout(() => {
+            if(!isBonus) {
+                isTeacherWatching = true;
+                // 모든 선생님 박스 활성화
+                for(let i=1; i<=4; i++) {
+                    const t = document.getElementById(`t-${i}`);
+                    t.innerText = "👀"; // 학생 쪽을 봄
+                    t.classList.add('watching');
+                }
+                
+                // 2초 후 다시 뒤로 돌아감
+                setTimeout(() => {
+                    isTeacherWatching = false;
+                    for(let i=1; i<=4; i++) {
+                        const t = document.getElementById(`t-${i}`);
+                        t.innerText = "👨‍🏫"; // 칠판 봄
+                        t.classList.remove('watching');
+                    }
+                    scheduleTeacher(); // 다음 주기 예약
+                }, 2000);
+            } else {
+                scheduleTeacher();
+            }
+        }, 18000); // 18초 대기 + 2초 감시 = 20초 주기
     }
 
     function setupInput(id) {
@@ -132,61 +150,63 @@
             if(e.key === 'Enter') {
                 const val = input.value.trim();
                 const team = document.getElementById(`mon-${id}`).classList.contains('red-mon') ? 'red' : 'blue';
-                if(catWords.includes(val)) {
+                
+                if(isTeacherWatching) {
+                    // 감점 처리
+                    if(teamLog[team].length > 0) {
+                        const lost = teamLog[team].pop();
+                        for(let j=1; j<=4; j++) document.getElementById(`c-${j}-${lost}`).className = 'card';
+                    }
+                } else if(catWords.includes(val)) {
                     for(let j=1; j<=4; j++) document.getElementById(`c-${j}-${val}`).className = `card ${team}`;
+                    if(!teamLog[team].includes(val)) teamLog[team].push(val);
                 }
                 input.value = '';
             }
         });
     }
 
-    function setupBonusInput() {
+    function startBonus() {
+        isBonus = true;
+        isTeacherWatching = false; // 보너스 중엔 선생님 안 봄
+        for(let i=1; i<=4; i++) document.getElementById(`t-${i}`).style.display = 'none';
+        
+        document.getElementById('game-grid').style.opacity = "0.2";
+        const m = document.getElementById('bonus-modal');
+        m.style.display = 'flex';
+        const q = bonusSentences[Math.floor(Math.random()*bonusSentences.length)];
+        document.getElementById('bonus-q').innerText = q;
+        document.getElementById('bonus-in').focus();
+    }
+
+    function setupBonus() {
         const bIn = document.getElementById('bonus-in');
         bIn.addEventListener('keydown', (e) => {
-            if(e.key === 'Enter' && isBonusMode) {
-                if(bIn.value.trim() === currentBonusText) {
-                    alert(`${lastFocusedTeam.toUpperCase()} 팀 보너스 성공! 즉시 복귀합니다.`);
-                    applyBonus(lastFocusedTeam);
-                    endBonus(); // 문제를 풀면 즉시 종료
+            if(e.key === 'Enter' && isBonus) {
+                if(bIn.value.trim() === document.getElementById('bonus-q').innerText) {
+                    awardBonus(lastTeam);
+                    finishGame();
                 }
             }
         });
     }
 
-    function startBonus() {
-        isBonusMode = true;
-        timeLeft = 200; // 보너스 20초
-        currentBonusText = bonusSentences[Math.floor(Math.random() * bonusSentences.length)];
-        
-        document.getElementById('game-grid').style.opacity = "0.2";
-        const modal = document.getElementById('bonus-modal');
-        modal.style.display = 'flex';
-        document.getElementById('bonus-q').innerText = currentBonusText;
-        const bIn = document.getElementById('bonus-in');
-        bIn.value = '';
-        bIn.focus();
-    }
-
-    function endBonus() {
-        isBonusMode = false;
-        timeLeft = 400; // 판 뒤집기 40초 리셋
-        document.getElementById('game-grid').style.opacity = "1";
-        document.getElementById('bonus-modal').style.display = 'none';
-        // 원래 모니터 포커스 복구
-        document.getElementById('in-1').focus();
-    }
-
-    function applyBonus(team) {
+    function awardBonus(team) {
         let count = 0;
         let shuffled = [...catWords].sort(() => Math.random() - 0.5);
         for(let w of shuffled) {
             if(count >= 4) break;
-            const card = document.getElementById(`c-1-${w}`);
-            if(!card.classList.contains(team)) {
-                for(let j=1; j<=4; j++) document.getElementById(`c-${j}-${w}`).className = `card ${team}`;
-                count++;
-            }
+            for(let j=1; j<=4; j++) document.getElementById(`c-${j}-${w}`).className = `card ${team}`;
+            count++;
         }
+    }
+
+    function finishGame() {
+        const r = document.querySelectorAll('#b-1 .card.red').length;
+        const b = document.querySelectorAll('#b-1 .card.blue').length;
+        const winner = r > b ? "빨강팀" : "파랑팀";
+        alert(`수업 끝!\n최종 결과 - 빨강: ${r} vs 파랑: ${b}\n\n결국 ${winner} 승리! 진 팀은 학교 앞 컵떡볶이 쏴라!`);
+        location.reload();
     }
 
     init();
