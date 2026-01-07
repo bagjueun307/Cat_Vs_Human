@@ -2,150 +2,204 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>고양이 판 뒤집기 대결</title>
+    <title>고양이 판 뒤집기: 실시간 대결 V3</title>
     <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
-        body { background: #f0e6d2; font-family: 'DungGeunMo', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
-        #header { width: 100%; background: #333; color: white; padding: 10px; text-align: center; display: flex; justify-content: space-around; align-items: center; }
+        body { background: #1a1a1a; color: white; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
         
-        /* 스코어보드 */
-        .score-box { font-size: 1.5rem; padding: 5px 20px; border-radius: 10px; min-width: 100px; }
-        .red-score { background: #e74c3c; color: white; }
-        .blue-score { background: #3498db; color: white; }
-        #timer { font-size: 2rem; color: #f1c40f; }
+        /* 상단 UI 및 타임바 */
+        #header { width: 100%; padding: 15px; background: #000; display: flex; flex-direction: column; align-items: center; border-bottom: 2px solid #333; }
+        .time-container { width: 70%; height: 25px; background: #333; border-radius: 12px; margin: 10px 0; overflow: hidden; border: 2px solid #555; position: relative; }
+        #time-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c); transition: width 0.1s linear; }
+        #timer-text { font-size: 1.5rem; color: #fff; text-shadow: 2px 2px #000; }
 
-        /* 카드판 영역 */
-        #board { 
-            display: grid; 
-            grid-template-columns: repeat(7, 1fr); 
-            gap: 10px; 
-            padding: 20px; 
-            max-width: 900px; 
-            perspective: 1000px;
+        /* 게임 메인 컨테이너 */
+        #game-wrapper { display: flex; width: 100vw; height: 70vh; position: relative; }
+        .monitor { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 15px; border: 8px solid; transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        
+        .red-monitor { border-color: #e74c3c; background: #2c0b0a; order: 1; }
+        .blue-monitor { border-color: #3498db; background: #0a172c; order: 2; }
+
+        /* 카드 그리드 */
+        .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
+        .card { 
+            width: 90px; height: 55px; background: #444; color: #bbb; border-radius: 6px; 
+            display: flex; justify-content: center; align-items: center; font-size: 0.9rem; 
+            text-align: center; box-shadow: 0 4px 0 #222; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
-        .card {
-            width: 110px; height: 60px;
-            background: #bdc3c7; /* 초기 중립색 */
-            border-radius: 5px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 0.9rem; font-weight: bold;
-            box-shadow: 0 4px 0 #95a5a6;
-            transition: all 0.3s;
-            text-align: center;
-            padding: 5px;
-        }
-        .card.red { background: #e74c3c; color: white; box-shadow: 0 4px 0 #c0392b; transform: rotateY(180deg); }
-        .card.blue { background: #3498db; color: white; box-shadow: 0 4px 0 #2980b9; transform: rotateY(180deg); }
+        /* 실시간 변색 클래스 */
+        .card.red { background: #e74c3c; color: white; box-shadow: 0 4px 0 #962d22; transform: scale(1.05) rotateY(10deg); }
+        .card.blue { background: #3498db; color: white; box-shadow: 0 4px 0 #2471a3; transform: scale(1.05) rotateY(-10deg); }
 
         /* 하단 입력창 */
-        #input-area { margin-top: 20px; display: flex; gap: 15px; align-items: center; }
-        input { padding: 10px; font-size: 1.2rem; font-family: 'DungGeunMo'; border: 3px solid #333; border-radius: 5px; width: 250px; }
+        .input-area { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        input { padding: 10px; font-family: 'DungGeunMo'; font-size: 1.2rem; text-align: center; border-radius: 8px; border: 3px solid #555; width: 180px; outline: none; }
+        input:focus { border-color: #f1c40f; }
+        .score-display { font-size: 1.8rem; font-weight: bold; margin-bottom: 5px; }
+
+        /* 대형 안내 메시지 */
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        #start-btn { padding: 20px 50px; font-size: 2.5rem; font-family: 'DungGeunMo'; background: #f1c40f; border: none; border-radius: 15px; cursor: pointer; transition: 0.2s; }
+        #start-btn:hover { transform: scale(1.1); background: #fff; }
+        #swap-notice { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #f1c40f; color: #000; padding: 15px 30px; border-radius: 30px; font-size: 2rem; display: none; z-index: 500; animation: blink 0.5s infinite; }
         
-        .team-btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-family: 'DungGeunMo'; font-size: 1rem; color: white; }
-        .btn-red { background: #e74c3c; }
-        .btn-blue { background: #3498db; }
-        .active-team { outline: 5px solid #f1c40f; transform: scale(1.1); }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <div class="score-box red-score">빨강: <span id="r-count">0</span></div>
-    <div id="timer">30</div>
-    <div class="score-box blue-score">파랑: <span id="b-count">0</span></div>
+<div id="overlay">
+    <h1 style="font-size: 3rem; margin-bottom: 20px;">CAT PAN FLIP</h1>
+    <p style="margin-bottom: 40px; font-size: 1.2rem;">고양이 관련 단어를 입력해 판을 뒤집으세요! (1분 대결)</p>
+    <button id="start-btn" onclick="gameStart()">GAME START</button>
 </div>
 
-<div id="board"></div>
+<div id="header">
+    <div id="timer-text">준비해주세요!</div>
+    <div class="time-container">
+        <div id="time-bar"></div>
+    </div>
+</div>
 
-<div id="input-area">
-    <button id="btn-red" class="team-btn btn-red" onclick="selectTeam('red')">빨강팀 참여</button>
-    <input type="text" id="word-input" placeholder="팀을 선택하고 단어를 입력!" disabled>
-    <button id="btn-blue" class="team-btn btn-blue" onclick="selectTeam('blue')">파랑팀 참여</button>
+<div id="swap-notice">위치 스왑!!!</div>
+
+<div id="game-wrapper">
+    <div id="mon-red" class="monitor red-monitor">
+        <div class="score-display">RED SCORE: <span id="rs">0</span></div>
+        <div id="board-red" class="board"></div>
+        <div class="input-area">
+            <input type="text" id="in-red" placeholder="빨강팀 입력창" disabled>
+        </div>
+    </div>
+
+    <div id="mon-blue" class="monitor blue-monitor">
+        <div class="score-display">BLUE SCORE: <span id="bs">0</span></div>
+        <div id="board-blue" class="board"></div>
+        <div class="input-area">
+            <input type="text" id="in-blue" placeholder="파랑팀 입력창" disabled>
+        </div>
+    </div>
 </div>
 
 <script>
     const catWords = [
-        "고양이", "야옹이", "츄르", "스크래쳐", "캣잎", "그루밍", "젤리", "수염", "꾹꾹이", "골골송", 
-        "냥냥펀치", "식빵자세", "꼬리", "사료", "모래", "캣타워", "집사", "털실", "방울", "낚시놀이",
-        "삼색이", "치즈태비", "고등어", "샴", "러시안블루", "페르시안", "먼치킨", "뱅갈", "길냥이", "하악질",
-        "무릎냥", "개냥이", "사냥", "낮잠", "햇살"
+        "고양이", "야옹이", "츄르", "젤리", "꾹꾹이", "골골송", "집사", "모래", "사료", "캣타워", 
+        "수염", "그루밍", "냥냥펀치", "꼬리", "낮잠", "햇살", "스크래쳐", "캣잎", "방울", "삼색이"
     ];
-
-    let currentTeam = null;
-    let timeLeft = 30;
+    
+    let timeLeft = 600; // 0.1초 단위 (60초)
     let gameActive = false;
-    let timerInterval;
+    let isSwapped = false;
 
-    const board = document.getElementById('board');
-    const input = document.getElementById('word-input');
-
-    // 카드 생성
-    function createBoard() {
-        board.innerHTML = '';
-        catWords.forEach(word => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerText = word;
-            card.id = `card-${word}`;
-            board.appendChild(card);
+    // 보드 생성 (양쪽 모니터 동일 단어 배치)
+    function createBoards() {
+        const boards = [document.getElementById('board-red'), document.getElementById('board-blue')];
+        boards.forEach((b, idx) => {
+            b.innerHTML = '';
+            const prefix = idx === 0 ? 'r' : 'b';
+            catWords.forEach(word => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerText = word;
+                card.id = `${prefix}-${word}`;
+                b.appendChild(card);
+            });
         });
     }
 
-    // 팀 선택
-    function selectTeam(team) {
-        if(gameActive) return;
-        currentTeam = team;
-        document.getElementById('btn-red').classList.remove('active-team');
-        document.getElementById('btn-blue').classList.remove('active-team');
-        document.getElementById(`btn-${team}`).classList.add('active-team');
-        
-        input.disabled = false;
-        input.focus();
-        if(!gameActive && timeLeft === 30) startGame();
-    }
-
-    function startGame() {
+    function gameStart() {
+        document.getElementById('overlay').style.display = 'none';
         gameActive = true;
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            document.getElementById('timer').innerText = timeLeft;
-            if(timeLeft <= 0) endGame();
-        }, 1000);
+        document.getElementById('in-red').disabled = false;
+        document.getElementById('in-blue').disabled = false;
+        document.getElementById('in-red').focus();
+        
+        startTimer();
+        startSwapLogic();
     }
 
-    input.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter' && gameActive) {
-            const word = input.value.trim();
-            const card = document.getElementById(`card-${word}`);
-            
-            if(card) {
-                card.className = `card ${currentTeam}`;
-                updateScore();
+    // 입력 처리 (실시간 동기화 핵심)
+    function handleInput(inputId, team) {
+        const el = document.getElementById(inputId);
+        el.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && gameActive) {
+                const word = el.value.trim();
+                if(catWords.includes(word)) {
+                    syncFlip(word, team);
+                }
+                el.value = '';
             }
-            input.value = '';
-        }
-    });
+        });
+    }
+
+    function syncFlip(word, team) {
+        // 실시간으로 양쪽 모니터의 해당 단어 카드를 찾아 색상을 바꿈
+        const redCard = document.getElementById(`r-${word}`);
+        const blueCard = document.getElementById(`b-${word}`);
+        
+        redCard.className = `card ${team}`;
+        blueCard.className = `card ${team}`;
+        
+        updateScore();
+    }
 
     function updateScore() {
-        const reds = document.querySelectorAll('.card.red').length;
-        const blues = document.querySelectorAll('.card.blue').length;
-        document.getElementById('r-count').innerText = reds;
-        document.getElementById('b-count').innerText = blues;
+        const redCount = document.querySelectorAll('#board-red .card.red').length;
+        const blueCount = document.querySelectorAll('#board-red .card.blue').length;
+        document.getElementById('rs').innerText = redCount;
+        document.getElementById('bs').innerText = blueCount;
     }
 
-    function endGame() {
-        gameActive = false;
-        clearInterval(timerInterval);
-        input.disabled = true;
-        const reds = parseInt(document.getElementById('r-count').innerText);
-        const blues = parseInt(document.getElementById('b-count').innerText);
+    function startTimer() {
+        const timerInt = setInterval(() => {
+            if(!gameActive) return clearInterval(timerInt);
+            timeLeft--;
+            
+            const bar = document.getElementById('time-bar');
+            bar.style.width = (timeLeft / 600) * 100 + "%";
+            document.getElementById('timer-text').innerText = `남은 시간: ${Math.ceil(timeLeft/10)}초`;
+
+            if(timeLeft <= 0) {
+                gameActive = false;
+                finishGame();
+            }
+        }, 100);
+    }
+
+    function startSwapLogic() {
+        setInterval(() => {
+            if(!gameActive) return;
+            isSwapped = !isSwapped;
+            
+            const notice = document.getElementById('swap-notice');
+            notice.style.display = 'block';
+            setTimeout(() => notice.style.display = 'none', 1500);
+
+            const redMon = document.getElementById('mon-red');
+            const blueMon = document.getElementById('mon-blue');
+            
+            if(isSwapped) {
+                redMon.style.order = 2;
+                blueMon.style.order = 1;
+            } else {
+                redMon.style.order = 1;
+                blueMon.style.order = 2;
+            }
+        }, 10000); // 10초마다 위치 교환
+    }
+
+    function finishGame() {
+        const rs = parseInt(document.getElementById('rs').innerText);
+        const bs = parseInt(document.getElementById('bs').innerText);
+        let winMsg = rs > bs ? "빨강팀 승리!" : (bs > rs ? "파랑팀 승리!" : "무승부!");
         
-        let winner = reds > blues ? "빨강팀 승리!" : (blues > reds ? "파랑팀 승리!" : "무승부!");
-        alert(`게임 종료!\n${winner}\n빨강: ${reds} vs 파랑: ${blues}`);
-        location.reload(); // 게임 재시작
+        alert(`게임 종료!\n최종 결과\nRED: ${rs} vs BLUE: ${bs}\n${winMsg}`);
+        location.reload();
     }
 
-    createBoard();
+    createBoards();
+    handleInput('in-red', 'red');
+    handleInput('in-blue', 'blue');
 </script>
 </body>
 </html>
