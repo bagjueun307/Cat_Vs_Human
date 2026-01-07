@@ -2,43 +2,47 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>컴퓨터실 몰래 게임: 전용 모니터 모드 V21</title>
+    <title>컴퓨터실 대결: 위치 셔플 & 실시간 동기화 V23</title>
     <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
     <style>
         body { background: #000; color: #00ff00; font-family: 'DungGeunMo', sans-serif; margin: 0; overflow: hidden; }
         
-        /* 1. 로비 (선택 화면) */
+        /* 로비 화면 */
         #lobby { position: fixed; inset: 0; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
-        .lobby-title { font-size: 2.5rem; color: #f1c40f; margin-bottom: 40px; }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .monitor-btn { width: 200px; height: 120px; font-family: 'DungGeunMo'; font-size: 1.2rem; cursor: pointer; background: #333; color: white; border: 5px outset #888; }
-        .monitor-btn:hover { background: #444; color: #0ff; }
-        .monitor-btn.red { border-color: #e74c3c; }
-        .monitor-btn.blue { border-color: #3498db; }
+        .monitor-btn { width: 180px; height: 100px; font-family: 'DungGeunMo'; font-size: 1.2rem; cursor: pointer; margin: 10px; background: #333; color: white; border: 4px outset #888; }
+        .start-trigger { margin-top: 30px; padding: 15px 40px; font-size: 1.5rem; background: #f1c40f; color: #000; cursor: pointer; border: none; font-family: 'DungGeunMo'; }
 
-        /* 2. 게임 레이아웃 */
+        /* 게임 화면 */
         #game-container { display: none; flex-direction: column; align-items: center; width: 100vw; height: 100vh; }
-        #header { width: 100%; padding: 15px; background: #222; border-bottom: 4px inset #555; display: flex; flex-direction: column; align-items: center; }
-        .time-bar-bg { width: 80%; height: 20px; background: #111; border: 2px inset #555; margin-top: 10px; }
+        #header { width: 100%; padding: 10px; background: #222; border-bottom: 4px inset #555; display: flex; flex-direction: column; align-items: center; }
+        
+        #score-board { display: flex; gap: 30px; font-size: 1.8rem; margin-bottom: 5px; }
+        .score.red { color: #e74c3c; }
+        .score.blue { color: #3498db; }
+
+        .time-bar-bg { width: 80%; height: 15px; background: #111; border: 2px inset #555; }
         #time-bar { width: 100%; height: 100%; background: #00ff00; transition: width 0.1s linear; }
 
-        /* 3. 단일 모니터 뷰 */
-        .main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90%; }
-        .teacher-box { width: 120px; height: 90px; font-size: 4rem; display: flex; justify-content: center; align-items: center; background: #333; border: 5px solid #555; border-radius: 15px 15px 0 0; margin-bottom: -5px; }
+        /* 게임 그리드 (위치 셔플의 핵심) */
+        #game-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100vw; height: 75vh; gap: 10px; padding: 10px; box-sizing: border-box; }
+        .monitor-container { display: flex; flex-direction: column; align-items: center; transition: all 0.5s ease-in-out; }
+        
+        .teacher-box { width: 70px; height: 50px; font-size: 2.5rem; display: flex; justify-content: center; align-items: center; background: #333; border: 4px solid #555; border-radius: 8px 8px 0 0; margin-bottom: -4px; }
         .teacher-box.watching { background: #ff0000; animation: shake 0.1s infinite; }
 
-        .monitor-frame { width: 100%; max-width: 900px; border: 12px outset #aaa; background: #000; padding: 20px; box-sizing: border-box; }
-        .monitor-frame.red-team { border-color: #e74c3c; }
-        .monitor-frame.blue-team { border-color: #3498db; }
+        .monitor-frame { width: 100%; height: 100%; border: 8px outset #aaa; background: #000; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .red-team { border-color: #e74c3c !important; }
+        .blue-team { border-color: #3498db !important; }
+        .my-border { border-style: double !important; border-width: 10px !important; box-shadow: 0 0 20px #0f0; } /* 내 모니터 강조 */
 
-        .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; width: 100%; }
-        .card { height: 30px; background: #222; color: #444; font-size: 0.8rem; display: flex; justify-content: center; align-items: center; border-radius: 4px; text-align: center; }
-        .card.red { background: #e74c3c; color: white; box-shadow: inset -3px -3px 0 #962d22; }
-        .card.blue { background: #3498db; color: white; box-shadow: inset -3px -3px 0 #2471a3; }
+        .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; flex: 1; }
+        .card { height: 20px; background: #222; color: #444; font-size: 0.5rem; display: flex; justify-content: center; align-items: center; border-radius: 2px; }
+        .card.red { background: #e74c3c; color: white; }
+        .card.blue { background: #3498db; color: white; }
 
-        .input-area { margin-top: 25px; width: 100%; }
-        #player-input { width: 100%; padding: 15px; font-family: 'DungGeunMo'; font-size: 1.8rem; background: #000; color: #fff; border: 4px solid #555; outline: none; text-align: center; }
-        #player-input.caught { border-color: red; background: #400; }
+        .input-area { margin-top: 10px; width: 100%; }
+        input { width: 100%; padding: 8px; font-family: 'DungGeunMo'; font-size: 1rem; background: #000; color: #fff; border: 2px solid #555; outline: none; text-align: center; }
+        input.caught { border-color: red; background: #400; }
 
         @keyframes shake { 0% { transform: translateY(-2px); } 100% { transform: translateY(2px); } }
     </style>
@@ -46,153 +50,193 @@
 <body>
 
 <div id="lobby">
-    <div class="lobby-title">자신의 자리를 선택하세요</div>
-    <div class="btn-grid">
-        <button class="monitor-btn red" onclick="enterMonitor(1)">모니터 1<br>(빨강팀)</button>
-        <button class="monitor-btn blue" onclick="enterMonitor(2)">모니터 2<br>(파랑팀)</button>
-        <button class="monitor-btn red" onclick="enterMonitor(3)">모니터 3<br>(빨강팀)</button>
-        <button class="monitor-btn blue" onclick="enterMonitor(4)">모니터 4<br>(파랑팀)</button>
+    <h1 class="lobby-title">진짜 컴퓨터실 타자 대결</h1>
+    <div id="btn-group">
+        <button class="monitor-btn" onclick="selectPos(1)">모니터 1 선택</button>
+        <button class="monitor-btn" onclick="selectPos(2)">모니터 2 선택</button>
+        <button class="monitor-btn" onclick="selectPos(3)">모니터 3 선택</button>
+        <button class="monitor-btn" onclick="selectPos(4)">모니터 4 선택</button>
     </div>
+    <button id="btn-start" class="start-trigger" onclick="triggerStart()" style="display:none;">수업 시작! (모두 동시 시작)</button>
+    <p id="wait-msg" style="color: #666; margin-top: 20px;">자리를 고르고 친구들을 기다리세요.</p>
 </div>
 
 <div id="game-container">
     <div id="header">
-        <div id="timer-text" style="font-size: 1.5rem;">남은 수업 시간: 300.0s</div>
+        <div id="score-board">
+            <div class="score red">RED: <span id="score-red">0</span></div>
+            <div style="color: #fff;">VS</div>
+            <div class="score blue">BLUE: <span id="score-blue">0</span></div>
+        </div>
+        <div id="timer-text" style="font-size:1.2rem;">남은 시간: 300.0s</div>
         <div class="time-bar-bg"><div id="time-bar"></div></div>
     </div>
 
-    <div class="main-stage">
-        <div id="teacher" class="teacher-box">👨‍🏫</div>
-        <div id="monitor-frame" class="monitor-frame">
-            <div id="board" class="board"></div>
-            <div class="input-area">
-                <input type="text" id="player-input" placeholder="선생님이 안 볼 때 입력!">
-            </div>
-        </div>
-        <div id="my-info" style="margin-top: 15px; font-size: 1.2rem;"></div>
+    <div id="game-grid">
+        <div id="cont-1" class="monitor-container"><div class="teacher-box t-all">👨‍🏫</div><div id="mon-1" class="monitor-frame red-team"><div class="board" id="board-1"></div><div class="input-area"><input type="text" id="in-1" placeholder="RED"></div></div></div>
+        <div id="cont-2" class="monitor-container"><div class="teacher-box t-all">👨‍🏫</div><div id="mon-2" class="monitor-frame blue-team"><div class="board" id="board-2"></div><div class="input-area"><input type="text" id="in-2" placeholder="BLUE"></div></div></div>
+        <div id="cont-3" class="monitor-container"><div class="teacher-box t-all">👨‍🏫</div><div id="mon-3" class="monitor-frame red-team"><div class="board" id="board-3"></div><div class="input-area"><input type="text" id="in-3" placeholder="RED"></div></div></div>
+        <div id="cont-4" class="monitor-container"><div id="t-4" class="teacher-box t-all">👨‍🏫</div><div id="mon-4" class="monitor-frame blue-team"><div class="board" id="board-4"></div><div class="input-area"><input type="text" id="in-4" placeholder="BLUE"></div></div></div>
     </div>
 </div>
 
 <script>
     const schoolWords = ["떡볶이", "급식", "운동장", "받아쓰기", "방학", "우유급식", "알림장", "짝꿍", "준비물", "실내화", "색종이", "딱지", "슬러시", "피카츄", "학원", "숙제", "체육", "소풍", "쉬는시간", "지우개", "필통", "실로폰", "리코더", "반장", "일기", "독서", "피구", "태권도", "문방구", "뽑기", "분식집", "교실", "모둠활동", "교장선생님", "운동회", "매점", "칠판", "분필", "실내화가방", "정문"];
 
-    let timeLeft = 3000;
+    let myPos = 0;
+    let gameActive = false;
     let isTeacherWatching = false;
-    let myPlayerId = 0;
-    let myTeam = '';
-    
-    // 이 객체가 서버 역할을 대신하여 모든 "가상" 모니터의 상태를 저장합니다.
-    const gameState = {
-        cards: {}, // 단어별 소유 팀 저장
-        teamLog: { red: [], blue: [] }
-    };
 
-    function enterMonitor(id) {
-        myPlayerId = id;
-        myTeam = (id === 1 || id === 3) ? 'red' : 'blue';
+    // 데이터 초기화
+    localStorage.removeItem('game_command');
+    localStorage.setItem('game_state', JSON.stringify({cards: {}, redScore: 0, blueScore: 0, shuffleSeed: 0}));
+
+    function selectPos(num) {
+        myPos = num;
+        document.getElementById('wait-msg').innerText = `${num}번 자리 선택 완료!`;
+        document.getElementById('btn-start').style.display = 'block';
         
+        // 내 모니터 강조 표시
+        for(let i=1; i<=4; i++) {
+            document.getElementById(`mon-${i}`).classList.remove('my-border');
+        }
+        document.getElementById(`mon-${num}`).classList.add('my-border');
+    }
+
+    function triggerStart() {
+        localStorage.setItem('game_command', 'START_' + Date.now());
+    }
+
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'game_command' && e.newValue.startsWith('START')) runGame();
+        if (e.key === 'game_state') syncUI();
+    });
+
+    function runGame() {
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('game-container').style.display = 'flex';
-        document.getElementById('monitor-frame').classList.add(myTeam === 'red' ? 'red-team' : 'blue-team');
-        document.getElementById('my-info').innerText = `당신은 ${id}번 자리 (${myTeam === 'red' ? '빨강팀' : '파랑팀'}) 입니다.`;
-        
-        initBoard();
-        startSyncGame();
-    }
+        initBoards();
+        gameActive = true;
 
-    function initBoard() {
-        const board = document.getElementById('board');
-        schoolWords.forEach(w => {
-            const c = document.createElement('div');
-            c.className = 'card';
-            c.innerText = w;
-            c.id = `card-${w}`;
-            board.appendChild(c);
-            gameState.cards[w] = null; // 초기엔 주인 없음
-        });
-    }
-
-    function startSyncGame() {
-        // 타이머 시작
+        let timeLeft = 3000;
         const timer = setInterval(() => {
-            if(timeLeft > 0) {
-                timeLeft--;
-                updateUI();
+            timeLeft--;
+            document.getElementById('time-bar').style.width = (timeLeft / 3000) * 100 + "%";
+            document.getElementById('timer-text').innerText = `남은 시간: ${(timeLeft / 10).toFixed(1)}s`;
+
+            // 1. 선생님 감시 동기화
+            const cycle = timeLeft % 200;
+            const boxes = document.querySelectorAll('.t-all');
+            if (cycle <= 20) {
+                isTeacherWatching = true;
+                boxes.forEach(b => { b.classList.add('watching'); b.innerText = "👀"; });
             } else {
+                isTeacherWatching = false;
+                boxes.forEach(b => { b.classList.remove('watching'); b.innerText = "👨‍🏫"; });
+            }
+
+            // 2. 위치 셔플 동기화 (10초마다)
+            if (timeLeft % 100 === 0 && timeLeft > 0) {
+                shuffleLayout();
+            }
+
+            if (timeLeft <= 0) {
                 clearInterval(timer);
-                alert(`게임 종료! 결과는 잠시 후 공개됩니다.`);
-                location.reload();
+                finishGame();
             }
         }, 100);
 
-        scheduleTeacher();
-        setupInput();
+        setupInputs();
     }
 
-    function updateUI() {
-        document.getElementById('time-bar').style.width = (timeLeft / 3000) * 100 + "%";
-        document.getElementById('timer-text').innerText = `남은 수업 시간: ${(timeLeft / 10).toFixed(1)}s`;
-        
-        // 카드 상태 동기화 (실제로는 서버에서 데이터를 가져오는 부분)
-        schoolWords.forEach(w => {
-            const cardElement = document.getElementById(`card-${w}`);
-            if (gameState.cards[w]) {
-                cardElement.className = `card ${gameState.cards[w]}`;
-            } else {
-                cardElement.className = 'card';
+    function initBoards() {
+        for(let i=1; i<=4; i++) {
+            const board = document.getElementById(`board-${i}`);
+            board.innerHTML = '';
+            schoolWords.forEach(w => {
+                const c = document.createElement('div');
+                c.className = 'card';
+                c.innerText = w;
+                c.id = `mon-${i}-card-${w}`;
+                board.appendChild(c);
+            });
+        }
+    }
+
+    function shuffleLayout() {
+        if (!gameActive || isTeacherWatching) return;
+        const grid = document.getElementById('game-grid');
+        const containers = Array.from(document.querySelectorAll('.monitor-container'));
+        containers.sort(() => Math.random() - 0.5);
+        containers.forEach(c => grid.appendChild(c));
+    }
+
+    function setupInputs() {
+        for(let i=1; i<=4; i++) {
+            const input = document.getElementById(`in-${i}`);
+            const team = (i === 1 || i === 3) ? 'red' : 'blue';
+            
+            // 다른 사람의 입력창은 비활성화 (내 자리만 입력 가능)
+            if (i !== myPos) {
+                input.disabled = true;
+                input.placeholder = "상대방 화면";
             }
-        });
-    }
 
-    function scheduleTeacher() {
-        setTimeout(() => {
-            isTeacherWatching = true;
-            document.getElementById('teacher').classList.add('watching');
-            document.getElementById('teacher').innerText = "👀";
-
-            setTimeout(() => {
-                isTeacherWatching = false;
-                document.getElementById('teacher').classList.remove('watching');
-                document.getElementById('teacher').innerText = "👨‍🏫";
-                scheduleTeacher();
-            }, 2000);
-        }, 18000);
-    }
-
-    function setupInput() {
-        const input = document.getElementById('player-input');
-        input.focus();
-
-        input.addEventListener('keydown', (e) => {
-            if (isTeacherWatching) {
-                input.classList.add('caught');
-                setTimeout(() => input.classList.remove('caught'), 500);
-                
-                // 걸렸을 때 패널티 (우리 팀 카드 하나 몰수)
-                if (gameState.teamLog[myTeam].length > 0) {
-                    const lostWord = gameState.teamLog[myTeam].pop();
-                    gameState.cards[lostWord] = null;
+            input.addEventListener('keydown', (e) => {
+                if (isTeacherWatching) {
+                    input.classList.add('caught');
+                    setTimeout(() => input.classList.remove('caught'), 500);
+                    
+                    let state = JSON.parse(localStorage.getItem('game_state'));
+                    let myTeamCards = schoolWords.filter(w => state.cards[w] === team);
+                    if (myTeamCards.length > 0) {
+                        delete state.cards[myTeamCards[Math.floor(Math.random()*myTeamCards.length)]];
+                        updateState(state);
+                    }
+                    input.value = '';
+                    e.preventDefault();
+                    return;
                 }
-                
-                input.value = '';
-                e.preventDefault();
-                return;
-            }
 
-            if (e.key === 'Enter') {
-                const val = input.value.trim();
-                // 단어가 맞고, 아직 주인이 없을 때만 점수 획득
-                if (schoolWords.includes(val) && !gameState.cards[val]) {
-                    gameState.cards[val] = myTeam;
-                    gameState.teamLog[myTeam].push(val);
+                if (e.key === 'Enter') {
+                    const val = input.value.trim();
+                    let state = JSON.parse(localStorage.getItem('game_state'));
+                    if (schoolWords.includes(val) && !state.cards[val]) {
+                        state.cards[val] = team;
+                        updateState(state);
+                    }
+                    input.value = '';
                 }
-                input.value = '';
-            }
-        });
+            });
+        }
     }
 
-    // 창을 여러 개 띄웠을 때 서로 통신하게 하려면 원래 서버가 필요하지만, 
-    // 지금은 한 화면에서 버튼을 눌러 "내 자리"로 들어가는 연출로 구성했습니다.
+    function updateState(state) {
+        state.redScore = schoolWords.filter(w => state.cards[w] === 'red').length;
+        state.blueScore = schoolWords.filter(w => state.cards[w] === 'blue').length;
+        localStorage.setItem('game_state', JSON.stringify(state));
+        syncUI();
+    }
+
+    function syncUI() {
+        const state = JSON.parse(localStorage.getItem('game_state'));
+        document.getElementById('score-red').innerText = state.redScore;
+        document.getElementById('score-blue').innerText = state.blueScore;
+
+        for(let i=1; i<=4; i++) {
+            schoolWords.forEach(w => {
+                const card = document.getElementById(`mon-${i}-card-${w}`);
+                card.className = 'card' + (state.cards[w] ? ' ' + state.cards[w] : '');
+            });
+        }
+    }
+
+    function finishGame() {
+        gameActive = false;
+        const state = JSON.parse(localStorage.getItem('game_state'));
+        alert(`수업 종료!\n최종 점수 - RED: ${state.redScore} : BLUE: ${state.blueScore}`);
+        location.reload();
+    }
 </script>
 </body>
 </html>
